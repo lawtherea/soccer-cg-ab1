@@ -43,6 +43,15 @@ STAND_STEP_COUNT = 5
 STAND_STEP_DEPTH = 4.0
 STAND_GAP = 7.0
 
+# =========================================================
+# PLACAR
+# =========================================================
+LEFT_TEAM_NAME = "CASA"
+RIGHT_TEAM_NAME = "VISITANTE"
+
+left_score = 0
+right_score = 0
+
 
 # =========================================================
 # TEXTURA
@@ -345,7 +354,7 @@ def draw_field_lines():
     )
     draw_arc(right_penalty_mark_x, 0.0, PENALTY_ARC_RADIUS, 180 - angle_right, 180 + angle_right)
 
-    # Arcos de escanteio voltados para dentro do campo
+    # arcos de escanteio para dentro do campo
     draw_arc(-half_length,  half_width, CORNER_ARC_RADIUS, 270, 360)
     draw_arc(-half_length, -half_width, CORNER_ARC_RADIUS,   0,  90)
     draw_arc( half_length,  half_width, CORNER_ARC_RADIUS, 180, 270)
@@ -373,7 +382,6 @@ def draw_goal_frame(side="left"):
 
     draw_box(x_front - t / 2, y1 - t / 2, 0.0, x_front + t / 2, y1 + t / 2, GOAL_HEIGHT, white)
     draw_box(x_front - t / 2, y2 - t / 2, 0.0, x_front + t / 2, y2 + t / 2, GOAL_HEIGHT, white)
-
     draw_box(x_front - t / 2, y1 - t / 2, GOAL_HEIGHT - t / 2, x_front + t / 2, y2 + t / 2, GOAL_HEIGHT + t / 2, white)
 
     draw_box(
@@ -776,6 +784,81 @@ def draw_stands():
 
 
 # =========================================================
+# PLACAR 2D
+# =========================================================
+def draw_text_2d(x, y, text, font, color=(255, 255, 255), bg=None):
+    text_surface = font.render(text, True, color, bg)
+    text_data = pygame.image.tostring(text_surface, "RGBA", True)
+    width = text_surface.get_width()
+    height = text_surface.get_height()
+
+    glWindowPos2d(x, y)
+    glDrawPixels(width, height, GL_RGBA, GL_UNSIGNED_BYTE, text_data)
+
+
+def draw_scoreboard(window_width, window_height, font_title, font_score):
+    global left_score, right_score
+
+    board_width = 360
+    board_height = 90
+
+    x = (window_width - board_width) // 2
+    y = window_height - 110
+
+    glPushAttrib(GL_ENABLE_BIT | GL_COLOR_BUFFER_BIT)
+
+    glDisable(GL_DEPTH_TEST)
+    glDisable(GL_TEXTURE_2D)
+    glEnable(GL_BLEND)
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
+
+    glMatrixMode(GL_PROJECTION)
+    glPushMatrix()
+    glLoadIdentity()
+    glOrtho(0, window_width, 0, window_height, -1, 1)
+
+    glMatrixMode(GL_MODELVIEW)
+    glPushMatrix()
+    glLoadIdentity()
+
+    glColor4f(0.05, 0.05, 0.05, 0.82)
+    glBegin(GL_QUADS)
+    glVertex2f(x, y)
+    glVertex2f(x + board_width, y)
+    glVertex2f(x + board_width, y + board_height)
+    glVertex2f(x, y + board_height)
+    glEnd()
+
+    glColor4f(1.0, 1.0, 1.0, 0.85)
+    glLineWidth(2.0)
+    glBegin(GL_LINE_LOOP)
+    glVertex2f(x, y)
+    glVertex2f(x + board_width, y)
+    glVertex2f(x + board_width, y + board_height)
+    glVertex2f(x, y + board_height)
+    glEnd()
+
+    glBegin(GL_LINES)
+    glVertex2f(x + board_width / 2, y + 10)
+    glVertex2f(x + board_width / 2, y + board_height - 10)
+    glEnd()
+
+    glPopMatrix()
+    glMatrixMode(GL_PROJECTION)
+    glPopMatrix()
+    glMatrixMode(GL_MODELVIEW)
+
+    draw_text_2d(x + 35, y + 55, LEFT_TEAM_NAME, font_title, (255, 255, 255))
+    draw_text_2d(x + 210, y + 55, RIGHT_TEAM_NAME, font_title, (255, 255, 255))
+
+    draw_text_2d(x + 125, y + 18, str(left_score), font_score, (255, 255, 255))
+    draw_text_2d(x + 225, y + 18, str(right_score), font_score, (255, 255, 255))
+    draw_text_2d(x + 173, y + 18, "-", font_score, (255, 255, 255))
+
+    glPopAttrib()
+
+
+# =========================================================
 # CENA
 # =========================================================
 def draw_field_scene(grass_texture):
@@ -828,7 +911,7 @@ def set_inclined_camera():
 # =========================================================
 def main():
     pygame.init()
-    pygame.display.set_caption("Campo de Futebol 3D com Textura e Cadeiras 3D - PyOpenGL + Pygame")
+    pygame.display.set_caption("Campo de Futebol 3D")
 
     pygame.display.set_mode((WINDOW_WIDTH, WINDOW_HEIGHT), DOUBLEBUF | OPENGL)
     setup_opengl(WINDOW_WIDTH, WINDOW_HEIGHT)
@@ -840,6 +923,10 @@ def main():
         print(f"Detalhe: {e}")
         pygame.quit()
         sys.exit()
+
+    pygame.font.init()
+    scoreboard_font_title = pygame.font.SysFont("Arial", 22, bold=True)
+    scoreboard_font_score = pygame.font.SysFont("Arial", 34, bold=True)
 
     clock = pygame.time.Clock()
     running = True
@@ -853,6 +940,12 @@ def main():
 
         set_inclined_camera()
         draw_field_scene(grass_texture)
+        draw_scoreboard(
+            WINDOW_WIDTH,
+            WINDOW_HEIGHT,
+            scoreboard_font_title,
+            scoreboard_font_score
+        )
 
         pygame.display.flip()
         clock.tick(60)
