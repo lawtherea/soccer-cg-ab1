@@ -87,6 +87,29 @@ def load_texture(image_path):
     glBindTexture(GL_TEXTURE_2D, 0)
     return texture_id
 
+def load_texture_alpha(image_path):
+    texture_surface = pygame.image.load(image_path).convert_alpha() 
+    texture_surface = pygame.transform.flip(texture_surface, False, True)
+    
+    texture_data = pygame.image.tostring(texture_surface, "RGBA", True)
+
+    width = texture_surface.get_width()
+    height = texture_surface.get_height()
+
+    texture_id = glGenTextures(1)
+    glBindTexture(GL_TEXTURE_2D, texture_id)
+
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR)
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR)
+
+    glTexImage2D(
+        GL_TEXTURE_2D, 0, GL_RGBA, width, height, 
+        0, GL_RGBA, GL_UNSIGNED_BYTE, texture_data
+    )
+
+    glBindTexture(GL_TEXTURE_2D, 0)
+    return texture_id
+
 
 # =========================================================
 # FUNÇÕES BÁSICAS
@@ -727,6 +750,47 @@ def draw_stands():
 
 
 # =========================================================
+# Imagem da torcida
+# =========================================================
+def draw_crowd_ui(texture_id):
+    glPushAttrib(GL_ENABLE_BIT | GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
+    glDisable(GL_DEPTH_TEST) 
+    glEnable(GL_TEXTURE_2D)
+    glBindTexture(GL_TEXTURE_2D, texture_id)
+    glEnable(GL_BLEND)
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
+
+    glMatrixMode(GL_PROJECTION)
+    glPushMatrix()
+    glLoadIdentity()
+    
+    glOrtho(0, WINDOW_WIDTH, 0, WINDOW_HEIGHT, -1, 1)
+
+    glMatrixMode(GL_MODELVIEW)
+    glPushMatrix()
+    glLoadIdentity()
+
+    glColor4f(1.0, 1.0, 1.0, 1.0)
+    glBegin(GL_QUADS)
+    
+    
+    glTexCoord2f(0, 1); glVertex2f(0, 0)
+
+    glTexCoord2f(1, 1); glVertex2f(WINDOW_WIDTH, 0)
+    
+    glTexCoord2f(1, 0); glVertex2f(WINDOW_WIDTH, WINDOW_HEIGHT)
+    
+    glTexCoord2f(0, 0); glVertex2f(0, WINDOW_HEIGHT)
+    
+    glEnd()
+
+    glPopMatrix()
+    glMatrixMode(GL_PROJECTION)
+    glPopMatrix()
+    glMatrixMode(GL_MODELVIEW)
+    glPopAttrib()
+
+# =========================================================
 # PLACAR 2D
 # =========================================================
 def draw_text_2d(x, y, text, font, color=(255, 255, 255), bg=None):
@@ -843,7 +907,7 @@ def set_inclined_camera():
     glLoadIdentity()
 
     gluLookAt(
-        0.0, 75.0, 95.0,
+        0.0, 30.0, 80.0,
         0.0, 0.0, 0.0,
         0.0, 1.0, 0.0
     )
@@ -861,9 +925,9 @@ def main():
 
     try:
         grass_texture = load_texture("grass.jpg")
+        crowd_texture = load_texture_alpha("teste_torcida.png") 
     except pygame.error as e:
-        print("Erro ao carregar 'grass.jpg'. Coloque a imagem na mesma pasta do arquivo Python.")
-        print(f"Detalhe: {e}")
+        print(f"Erro ao carregar as imagens: {e}")
         pygame.quit()
         sys.exit()
 
@@ -883,6 +947,9 @@ def main():
 
         set_inclined_camera()
         draw_field_scene(grass_texture)
+
+        draw_crowd_ui(crowd_texture)
+
         draw_scoreboard(
             WINDOW_WIDTH,
             WINDOW_HEIGHT,
