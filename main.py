@@ -843,7 +843,7 @@ def set_inclined_camera():
     glLoadIdentity()
 
     gluLookAt(
-        0.0, 75.0, 95.0,
+        0.0, 30.0, 80.0,
         0.0, 0.0, 0.0,
         0.0, 1.0, 0.0
     )
