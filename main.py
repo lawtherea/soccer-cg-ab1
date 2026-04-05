@@ -238,34 +238,9 @@ def draw_textured_grass(texture_id):
     glBindTexture(GL_TEXTURE_2D, 0)
     glDisable(GL_TEXTURE_2D)
 
-def draw_grass_stripes_overlay():
-    half_length = FIELD_LENGTH / 2
-    half_width = FIELD_WIDTH / 2
-
-    stripe_count = 14
-    stripe_width = FIELD_LENGTH / stripe_count
-
-    for i in range(stripe_count):
-        x1 = -half_length + i * stripe_width
-        x2 = x1 + stripe_width
-
-        if i % 2 == 0:
-            glColor4f(1.0, 1.0, 1.0, 0.035)
-        else:
-            glColor4f(0.0, 0.0, 0.0, 0.03)
-
-        glBegin(GL_QUADS)
-        glVertex3f(x1, 0.003, -half_width)
-        glVertex3f(x2, 0.003, -half_width)
-        glVertex3f(x2, 0.003, half_width)
-        glVertex3f(x1, 0.003, half_width)
-        glEnd()
-
-
-def draw_beautiful_grass(texture_id):
+def draw_grass(texture_id):
     draw_outer_area()
     draw_textured_grass(texture_id)
-    draw_grass_stripes_overlay()
 
 # =========================================================
 # CAMPO
@@ -830,7 +805,7 @@ def draw_scoreboard(window_width, window_height, font_title, font_score):
 # CENA
 # =========================================================
 def draw_field_scene(grass_texture):
-    draw_beautiful_grass(grass_texture)
+    draw_grass(grass_texture)
     draw_stands()
     draw_field_lines()
     draw_goal_frame("left")
