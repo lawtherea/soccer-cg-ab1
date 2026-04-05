@@ -238,36 +238,6 @@ def draw_textured_grass(texture_id):
     glBindTexture(GL_TEXTURE_2D, 0)
     glDisable(GL_TEXTURE_2D)
 
-
-def draw_grass_noise():
-    half_length = FIELD_LENGTH / 2
-    half_width = FIELD_WIDTH / 2
-
-    cell = 2.2
-    cols = int(FIELD_LENGTH / cell) + 1
-    rows = int(FIELD_WIDTH / cell) + 1
-
-    glBegin(GL_QUADS)
-    for i in range(cols):
-        for j in range(rows):
-            x1 = -half_length + i * cell
-            y1 = -half_width + j * cell
-            x2 = min(x1 + cell, half_length)
-            y2 = min(y1 + cell, half_width)
-
-            n = random.uniform(-0.02, 0.02)
-            r = max(0.08, min(0.22, 0.15 + n * 0.5))
-            g = max(0.38, min(0.62, 0.50 + n))
-            b = max(0.10, min(0.24, 0.18 + n * 0.4))
-
-            glColor4f(r, g, b, 0.06)
-            glVertex3f(x1, 0.002, y1)
-            glVertex3f(x2, 0.002, y1)
-            glVertex3f(x2, 0.002, y2)
-            glVertex3f(x1, 0.002, y2)
-    glEnd()
-
-
 def draw_grass_stripes_overlay():
     half_length = FIELD_LENGTH / 2
     half_width = FIELD_WIDTH / 2
@@ -296,8 +266,6 @@ def draw_beautiful_grass(texture_id):
     draw_outer_area()
     draw_textured_grass(texture_id)
     draw_grass_stripes_overlay()
-    draw_grass_noise()
-
 
 # =========================================================
 # CAMPO
