@@ -1,5 +1,4 @@
 import math
-import random
 import sys
 
 import pygame
@@ -7,7 +6,6 @@ from pygame.locals import DOUBLEBUF, OPENGL, QUIT
 
 from OpenGL.GL import *
 from OpenGL.GLU import *
-
 
 # =========================================================
 # CONFIGURAÇÕES GERAIS
@@ -38,11 +36,6 @@ OUTER_MARGIN = 18.0
 GOAL_POST_THICKNESS = 0.12
 FLAG_HEIGHT = 1.8
 
-STAND_HEIGHT = 7.0
-STAND_STEP_COUNT = 5
-STAND_STEP_DEPTH = 4.0
-STAND_GAP = 7.0
-
 # =========================================================
 # PLACAR
 # =========================================================
@@ -51,7 +44,6 @@ RIGHT_TEAM_NAME = "VISITANTE"
 
 left_score = 0
 right_score = 0
-
 
 # =========================================================
 # TEXTURA
@@ -110,7 +102,6 @@ def load_texture_alpha(image_path):
     glBindTexture(GL_TEXTURE_2D, 0)
     return texture_id
 
-
 # =========================================================
 # FUNÇÕES BÁSICAS
 # =========================================================
@@ -120,7 +111,6 @@ def draw_line(x1, y1, x2, y2, z=0.03):
     glVertex3f(x2, z, y2)
     glEnd()
 
-
 def draw_rectangle_outline(x_min, y_min, x_max, y_max, z=0.03):
     glBegin(GL_LINE_LOOP)
     glVertex3f(x_min, z, y_min)
@@ -128,7 +118,6 @@ def draw_rectangle_outline(x_min, y_min, x_max, y_max, z=0.03):
     glVertex3f(x_max, z, y_max)
     glVertex3f(x_min, z, y_max)
     glEnd()
-
 
 def draw_filled_rectangle(x_min, y_min, x_max, y_max, color, z=0.0):
     glColor3f(*color)
@@ -139,7 +128,6 @@ def draw_filled_rectangle(x_min, y_min, x_max, y_max, color, z=0.0):
     glVertex3f(x_min, z, y_max)
     glEnd()
 
-
 def draw_circle(cx, cy, radius, segments=100, z=0.03):
     glBegin(GL_LINE_LOOP)
     for i in range(segments):
@@ -148,7 +136,6 @@ def draw_circle(cx, cy, radius, segments=100, z=0.03):
         y = cy + math.sin(angle) * radius
         glVertex3f(x, z, y)
     glEnd()
-
 
 def draw_arc(cx, cy, radius, start_angle_deg, end_angle_deg, segments=64, z=0.03):
     start_rad = math.radians(start_angle_deg)
@@ -163,7 +150,6 @@ def draw_arc(cx, cy, radius, start_angle_deg, end_angle_deg, segments=64, z=0.03
         glVertex3f(x, z, y)
     glEnd()
 
-
 def draw_point(cx, cy, radius=0.28, segments=28, z=0.03):
     glBegin(GL_POLYGON)
     for i in range(segments):
@@ -172,7 +158,6 @@ def draw_point(cx, cy, radius=0.28, segments=28, z=0.03):
         y = cy + math.sin(angle) * radius
         glVertex3f(x, z, y)
     glEnd()
-
 
 def draw_box(x1, y1, z1, x2, y2, z2, color):
     glColor3f(*color)
@@ -215,7 +200,6 @@ def draw_box(x1, y1, z1, x2, y2, z2, color):
     glVertex3f(x2, z2, y1)
     glEnd()
 
-
 # =========================================================
 # GRAMADO
 # =========================================================
@@ -231,7 +215,6 @@ def draw_outer_area():
         (0.09, 0.22, 0.09),
         z=-0.02
     )
-
 
 def draw_textured_grass(texture_id):
     half_length = FIELD_LENGTH / 2
@@ -325,7 +308,6 @@ def draw_field_lines():
     draw_arc(-half_length, -half_width, CORNER_ARC_RADIUS,   0,  90)
     draw_arc( half_length,  half_width, CORNER_ARC_RADIUS, 180, 270)
     draw_arc( half_length, -half_width, CORNER_ARC_RADIUS,  90, 180)
-
 
 # =========================================================
 # GOLS 3D
@@ -431,7 +413,6 @@ def draw_goal_net(side="left"):
             z += spacing_z
         glEnd()
 
-
 # =========================================================
 # BANDEIRINHAS
 # =========================================================
@@ -455,7 +436,6 @@ def draw_corner_flag(x, y, pole_color=(1.0, 1.0, 0.2), flag_color=(1.0, 0.1, 0.1
     glVertex3f(x + 0.65, FLAG_HEIGHT - 0.22, y)
     glEnd()
 
-
 def draw_all_corner_flags():
     half_length = FIELD_LENGTH / 2
     half_width = FIELD_WIDTH / 2
@@ -464,8 +444,6 @@ def draw_all_corner_flags():
     draw_corner_flag(-half_length,  half_width, flag_color=(1.0, 0.9, 0.1))
     draw_corner_flag( half_length, -half_width, flag_color=(0.1, 0.3, 1.0))
     draw_corner_flag( half_length,  half_width, flag_color=(1.0, 0.5, 0.1))
-
-
 
 # =========================================================
 # Imagem da torcida
@@ -519,7 +497,6 @@ def draw_text_2d(x, y, text, font, color=(255, 255, 255), bg=None):
 
     glWindowPos2d(x, y)
     glDrawPixels(width, height, GL_RGBA, GL_UNSIGNED_BYTE, text_data)
-
 
 def draw_scoreboard(window_width, window_height, font_title, font_score):
     global left_score, right_score
@@ -582,7 +559,6 @@ def draw_scoreboard(window_width, window_height, font_title, font_score):
 
     glPopAttrib()
 
-
 # =========================================================
 # CENA
 # =========================================================
@@ -594,7 +570,6 @@ def draw_field_scene(grass_texture):
     draw_goal_net("left")
     draw_goal_net("right")
     draw_all_corner_flags()
-
 
 # =========================================================
 # OPENGL
@@ -629,7 +604,6 @@ def set_inclined_camera():
         0.0, 1.0, 0.0
     )
 
-
 # =========================================================
 # LOOP PRINCIPAL
 # =========================================================
@@ -642,7 +616,8 @@ def main():
 
     try:
         grass_texture = load_texture("grass.jpg")
-        crowd_texture = load_texture_alpha("teste_torcida.png") 
+        crowd_texture_1 = load_texture_alpha("torcida_mov1.png")
+        crowd_texture_2 = load_texture_alpha("torcida_mov2.png")
     except pygame.error as e:
         print(f"Erro ao carregar as imagens: {e}")
         pygame.quit()
@@ -655,17 +630,27 @@ def main():
     clock = pygame.time.Clock()
     running = True
 
+    frame_counter = 0
+
     while running:
         for event in pygame.event.get():
             if event.type == QUIT:
                 running = False
+
+        frame_counter += 1
+
+        # alterna a cada X frames (ajuste para controlar velocidade)
+        if (frame_counter // 20) % 2 == 0:
+            current_crowd_texture = crowd_texture_1
+        else:
+            current_crowd_texture = crowd_texture_2
 
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
 
         set_inclined_camera()
         draw_field_scene(grass_texture)
 
-        draw_crowd_ui(crowd_texture)
+        draw_crowd_ui(current_crowd_texture)
 
         draw_scoreboard(
             WINDOW_WIDTH,
@@ -679,7 +664,6 @@ def main():
 
     pygame.quit()
     sys.exit()
-
 
 if __name__ == "__main__":
     main()
