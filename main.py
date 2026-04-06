@@ -1,5 +1,4 @@
 import math
-import random
 import sys
 
 import pygame
@@ -7,7 +6,6 @@ from pygame.locals import DOUBLEBUF, OPENGL, QUIT
 
 from OpenGL.GL import *
 from OpenGL.GLU import *
-
 
 # =========================================================
 # CONFIGURAÇÕES GERAIS
@@ -38,11 +36,6 @@ OUTER_MARGIN = 18.0
 GOAL_POST_THICKNESS = 0.12
 FLAG_HEIGHT = 1.8
 
-STAND_HEIGHT = 7.0
-STAND_STEP_COUNT = 5
-STAND_STEP_DEPTH = 4.0
-STAND_GAP = 7.0
-
 # =========================================================
 # PLACAR
 # =========================================================
@@ -51,7 +44,6 @@ RIGHT_TEAM_NAME = "VISITANTE"
 
 left_score = 0
 right_score = 0
-
 
 # =========================================================
 # TEXTURA
@@ -87,6 +79,28 @@ def load_texture(image_path):
     glBindTexture(GL_TEXTURE_2D, 0)
     return texture_id
 
+def load_texture_alpha(image_path):
+    texture_surface = pygame.image.load(image_path).convert_alpha() 
+    texture_surface = pygame.transform.flip(texture_surface, False, True)
+    
+    texture_data = pygame.image.tostring(texture_surface, "RGBA", True)
+
+    width = texture_surface.get_width()
+    height = texture_surface.get_height()
+
+    texture_id = glGenTextures(1)
+    glBindTexture(GL_TEXTURE_2D, texture_id)
+
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR)
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR)
+
+    glTexImage2D(
+        GL_TEXTURE_2D, 0, GL_RGBA, width, height, 
+        0, GL_RGBA, GL_UNSIGNED_BYTE, texture_data
+    )
+
+    glBindTexture(GL_TEXTURE_2D, 0)
+    return texture_id
 
 # =========================================================
 # FUNÇÕES BÁSICAS
@@ -97,7 +111,6 @@ def draw_line(x1, y1, x2, y2, z=0.03):
     glVertex3f(x2, z, y2)
     glEnd()
 
-
 def draw_rectangle_outline(x_min, y_min, x_max, y_max, z=0.03):
     glBegin(GL_LINE_LOOP)
     glVertex3f(x_min, z, y_min)
@@ -105,7 +118,6 @@ def draw_rectangle_outline(x_min, y_min, x_max, y_max, z=0.03):
     glVertex3f(x_max, z, y_max)
     glVertex3f(x_min, z, y_max)
     glEnd()
-
 
 def draw_filled_rectangle(x_min, y_min, x_max, y_max, color, z=0.0):
     glColor3f(*color)
@@ -116,7 +128,6 @@ def draw_filled_rectangle(x_min, y_min, x_max, y_max, color, z=0.0):
     glVertex3f(x_min, z, y_max)
     glEnd()
 
-
 def draw_circle(cx, cy, radius, segments=100, z=0.03):
     glBegin(GL_LINE_LOOP)
     for i in range(segments):
@@ -125,7 +136,6 @@ def draw_circle(cx, cy, radius, segments=100, z=0.03):
         y = cy + math.sin(angle) * radius
         glVertex3f(x, z, y)
     glEnd()
-
 
 def draw_arc(cx, cy, radius, start_angle_deg, end_angle_deg, segments=64, z=0.03):
     start_rad = math.radians(start_angle_deg)
@@ -140,7 +150,6 @@ def draw_arc(cx, cy, radius, start_angle_deg, end_angle_deg, segments=64, z=0.03
         glVertex3f(x, z, y)
     glEnd()
 
-
 def draw_point(cx, cy, radius=0.28, segments=28, z=0.03):
     glBegin(GL_POLYGON)
     for i in range(segments):
@@ -149,7 +158,6 @@ def draw_point(cx, cy, radius=0.28, segments=28, z=0.03):
         y = cy + math.sin(angle) * radius
         glVertex3f(x, z, y)
     glEnd()
-
 
 def draw_box(x1, y1, z1, x2, y2, z2, color):
     glColor3f(*color)
@@ -192,7 +200,6 @@ def draw_box(x1, y1, z1, x2, y2, z2, color):
     glVertex3f(x2, z2, y1)
     glEnd()
 
-
 # =========================================================
 # GRAMADO
 # =========================================================
@@ -208,7 +215,6 @@ def draw_outer_area():
         (0.09, 0.22, 0.09),
         z=-0.02
     )
-
 
 def draw_textured_grass(texture_id):
     half_length = FIELD_LENGTH / 2
@@ -302,7 +308,6 @@ def draw_field_lines():
     draw_arc(-half_length, -half_width, CORNER_ARC_RADIUS,   0,  90)
     draw_arc( half_length,  half_width, CORNER_ARC_RADIUS, 180, 270)
     draw_arc( half_length, -half_width, CORNER_ARC_RADIUS,  90, 180)
-
 
 # =========================================================
 # GOLS 3D
@@ -408,7 +413,6 @@ def draw_goal_net(side="left"):
             z += spacing_z
         glEnd()
 
-
 # =========================================================
 # BANDEIRINHAS
 # =========================================================
@@ -432,7 +436,6 @@ def draw_corner_flag(x, y, pole_color=(1.0, 1.0, 0.2), flag_color=(1.0, 0.1, 0.1
     glVertex3f(x + 0.65, FLAG_HEIGHT - 0.22, y)
     glEnd()
 
-
 def draw_all_corner_flags():
     half_length = FIELD_LENGTH / 2
     half_width = FIELD_WIDTH / 2
@@ -442,289 +445,46 @@ def draw_all_corner_flags():
     draw_corner_flag( half_length, -half_width, flag_color=(0.1, 0.3, 1.0))
     draw_corner_flag( half_length,  half_width, flag_color=(1.0, 0.5, 0.1))
 
-
 # =========================================================
-# ARQUIBANCADAS E CADEIRAS
+# Imagem da torcida
 # =========================================================
-def seat_palette():
-    return [
-        (0.86, 0.12, 0.12),
-        (0.10, 0.35, 0.85),
-        (0.92, 0.82, 0.12),
-        (0.10, 0.65, 0.25),
-        (0.92, 0.52, 0.12),
-        (0.85, 0.85, 0.88),
-        (0.52, 0.18, 0.72),
-    ]
+def draw_crowd_ui(texture_id):
+    glPushAttrib(GL_ENABLE_BIT | GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
+    glDisable(GL_DEPTH_TEST) 
+    glEnable(GL_TEXTURE_2D)
+    glBindTexture(GL_TEXTURE_2D, texture_id)
+    glEnable(GL_BLEND)
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
 
+    glMatrixMode(GL_PROJECTION)
+    glPushMatrix()
+    glLoadIdentity()
+    
+    glOrtho(0, WINDOW_WIDTH, 0, WINDOW_HEIGHT, -1, 1)
 
-def choose_seat_color(index_a, index_b):
-    palette = seat_palette()
-    return palette[(index_a * 3 + index_b * 5) % len(palette)]
+    glMatrixMode(GL_MODELVIEW)
+    glPushMatrix()
+    glLoadIdentity()
 
+    glColor4f(1.0, 1.0, 1.0, 1.0)
+    glBegin(GL_QUADS)
+    
+    
+    glTexCoord2f(0, 1); glVertex2f(0, 0)
 
-def draw_seat_horizontal(x, y, z, color, facing="down"):
-    seat_w = 0.9
-    seat_d = 0.75
-    seat_h = 0.12
-    back_h = 0.55
-    back_t = 0.08
-    leg_t = 0.06
+    glTexCoord2f(1, 1); glVertex2f(WINDOW_WIDTH, 0)
+    
+    glTexCoord2f(1, 0); glVertex2f(WINDOW_WIDTH, WINDOW_HEIGHT)
+    
+    glTexCoord2f(0, 0); glVertex2f(0, WINDOW_HEIGHT)
+    
+    glEnd()
 
-    darker = tuple(max(0.0, c * 0.75) for c in color)
-
-    if facing == "down":
-        y_front = y - 0.12
-    else:
-        y_front = y + 0.12
-
-    # Assento
-    draw_box(
-        x - seat_w / 2,
-        y_front - seat_d / 2,
-        z,
-        x + seat_w / 2,
-        y_front + seat_d / 2,
-        z + seat_h,
-        color
-    )
-
-    # Encosto
-    if facing == "down":
-        draw_box(
-            x - seat_w / 2,
-            y_front + seat_d / 2 - back_t,
-            z + seat_h,
-            x + seat_w / 2,
-            y_front + seat_d / 2,
-            z + seat_h + back_h,
-            darker
-        )
-    else:
-        draw_box(
-            x - seat_w / 2,
-            y_front - seat_d / 2,
-            z + seat_h,
-            x + seat_w / 2,
-            y_front - seat_d / 2 + back_t,
-            z + seat_h + back_h,
-            darker
-        )
-
-    # Pés
-    leg_offset_x = 0.25
-    leg_offset_y = 0.18
-
-    draw_box(
-        x - leg_offset_x - leg_t / 2,
-        y_front - leg_offset_y - leg_t / 2,
-        z - 0.22,
-        x - leg_offset_x + leg_t / 2,
-        y_front - leg_offset_y + leg_t / 2,
-        z,
-        darker
-    )
-    draw_box(
-        x + leg_offset_x - leg_t / 2,
-        y_front - leg_offset_y - leg_t / 2,
-        z - 0.22,
-        x + leg_offset_x + leg_t / 2,
-        y_front - leg_offset_y + leg_t / 2,
-        z,
-        darker
-    )
-
-
-def draw_seat_vertical(x, y, z, color, facing="right"):
-    seat_w = 0.9
-    seat_d = 0.75
-    seat_h = 0.12
-    back_h = 0.55
-    back_t = 0.08
-    leg_t = 0.06
-
-    darker = tuple(max(0.0, c * 0.75) for c in color)
-
-    if facing == "right":
-        x_front = x - 0.12
-    else:
-        x_front = x + 0.12
-
-    # Assento
-    draw_box(
-        x_front - seat_d / 2,
-        y - seat_w / 2,
-        z,
-        x_front + seat_d / 2,
-        y + seat_w / 2,
-        z + seat_h,
-        color
-    )
-
-    # Encosto
-    if facing == "right":
-        draw_box(
-            x_front + seat_d / 2 - back_t,
-            y - seat_w / 2,
-            z + seat_h,
-            x_front + seat_d / 2,
-            y + seat_w / 2,
-            z + seat_h + back_h,
-            darker
-        )
-    else:
-        draw_box(
-            x_front - seat_d / 2,
-            y - seat_w / 2,
-            z + seat_h,
-            x_front - seat_d / 2 + back_t,
-            y + seat_w / 2,
-            z + seat_h + back_h,
-            darker
-        )
-
-    # Pés
-    leg_offset_y = 0.25
-    leg_offset_x = 0.18
-
-    draw_box(
-        x_front - leg_offset_x - leg_t / 2,
-        y - leg_offset_y - leg_t / 2,
-        z - 0.22,
-        x_front - leg_offset_x + leg_t / 2,
-        y - leg_offset_y + leg_t / 2,
-        z,
-        darker
-    )
-    draw_box(
-        x_front - leg_offset_x - leg_t / 2,
-        y + leg_offset_y - leg_t / 2,
-        z - 0.22,
-        x_front - leg_offset_x + leg_t / 2,
-        y + leg_offset_y + leg_t / 2,
-        z,
-        darker
-    )
-
-
-def draw_horizontal_stand(y_near, y_far):
-    half_length = FIELD_LENGTH / 2 + 8.0
-    step_height = STAND_HEIGHT / STAND_STEP_COUNT
-
-    for i in range(STAND_STEP_COUNT):
-        z1 = i * step_height
-        z2 = (i + 1) * step_height
-        d1 = i * STAND_STEP_DEPTH
-        d2 = (i + 1) * STAND_STEP_DEPTH
-
-        if y_far > y_near:
-            ys1 = y_near + d1
-            ys2 = y_near + d2
-        else:
-            ys1 = y_near - d1
-            ys2 = y_near - d2
-
-        color = (0.48 - i * 0.03, 0.48 - i * 0.03, 0.50 - i * 0.03)
-        draw_box(-half_length, min(ys1, ys2), z1, half_length, max(ys1, ys2), z2, color)
-
-
-def draw_vertical_stand(x_near, x_far):
-    half_width = FIELD_WIDTH / 2 + 8.0
-    step_height = STAND_HEIGHT / STAND_STEP_COUNT
-
-    for i in range(STAND_STEP_COUNT):
-        z1 = i * step_height
-        z2 = (i + 1) * step_height
-        d1 = i * STAND_STEP_DEPTH
-        d2 = (i + 1) * STAND_STEP_DEPTH
-
-        if x_far > x_near:
-            xs1 = x_near + d1
-            xs2 = x_near + d2
-        else:
-            xs1 = x_near - d1
-            xs2 = x_near - d2
-
-        color = (0.44 - i * 0.03, 0.44 - i * 0.03, 0.46 - i * 0.03)
-        draw_box(min(xs1, xs2), -half_width, z1, max(xs1, xs2), half_width, z2, color)
-
-
-def draw_horizontal_seats(top=True):
-    half_length = FIELD_LENGTH / 2 + 7.0
-    base_y = FIELD_WIDTH / 2 + STAND_GAP if top else -FIELD_WIDTH / 2 - STAND_GAP
-
-    rows = STAND_STEP_COUNT
-    seat_spacing_x = 1.25
-    usable_half_length = half_length - 3.0
-    seat_count = int((usable_half_length * 2) / seat_spacing_x)
-
-    step_height = STAND_HEIGHT / STAND_STEP_COUNT
-
-    for row in range(rows):
-        z = (row + 1) * step_height + 0.02
-        y_offset = row * STAND_STEP_DEPTH + (STAND_STEP_DEPTH * 0.58)
-
-        y = base_y + y_offset if top else base_y - y_offset
-        facing = "down" if top else "up"
-
-        start_x = -usable_half_length
-        for col in range(seat_count):
-            x = start_x + col * seat_spacing_x
-            color = choose_seat_color(row, col)
-            draw_seat_horizontal(x, y, z, color, facing=facing)
-
-
-def draw_vertical_seats(right=True):
-    half_width = FIELD_WIDTH / 2 + 7.0
-    base_x = FIELD_LENGTH / 2 + STAND_GAP if right else -FIELD_LENGTH / 2 - STAND_GAP
-
-    rows = STAND_STEP_COUNT
-    seat_spacing_y = 1.25
-    usable_half_width = half_width - 3.0
-    seat_count = int((usable_half_width * 2) / seat_spacing_y)
-
-    step_height = STAND_HEIGHT / STAND_STEP_COUNT
-
-    for row in range(rows):
-        z = (row + 1) * step_height + 0.02
-        x_offset = row * STAND_STEP_DEPTH + (STAND_STEP_DEPTH * 0.58)
-
-        x = base_x + x_offset if right else base_x - x_offset
-        facing = "left" if right else "right"
-
-        start_y = -usable_half_width
-        for col in range(seat_count):
-            y = start_y + col * seat_spacing_y
-            color = choose_seat_color(row + 10, col)
-            draw_seat_vertical(x, y, z, color, facing=facing)
-
-
-def draw_stands():
-    half_length = FIELD_LENGTH / 2
-    half_width = FIELD_WIDTH / 2
-
-    draw_horizontal_stand(
-        half_width + STAND_GAP,
-        half_width + STAND_GAP + STAND_STEP_COUNT * STAND_STEP_DEPTH
-    )
-    draw_horizontal_stand(
-        -half_width - STAND_GAP,
-        -half_width - STAND_GAP - STAND_STEP_COUNT * STAND_STEP_DEPTH
-    )
-    draw_vertical_stand(
-        -half_length - STAND_GAP,
-        -half_length - STAND_GAP - STAND_STEP_COUNT * STAND_STEP_DEPTH
-    )
-    draw_vertical_stand(
-        half_length + STAND_GAP,
-        half_length + STAND_GAP + STAND_STEP_COUNT * STAND_STEP_DEPTH
-    )
-
-    draw_horizontal_seats(top=True)
-    draw_horizontal_seats(top=False)
-    draw_vertical_seats(right=False)
-    draw_vertical_seats(right=True)
-
+    glPopMatrix()
+    glMatrixMode(GL_PROJECTION)
+    glPopMatrix()
+    glMatrixMode(GL_MODELVIEW)
+    glPopAttrib()
 
 # =========================================================
 # PLACAR 2D
@@ -737,7 +497,6 @@ def draw_text_2d(x, y, text, font, color=(255, 255, 255), bg=None):
 
     glWindowPos2d(x, y)
     glDrawPixels(width, height, GL_RGBA, GL_UNSIGNED_BYTE, text_data)
-
 
 def draw_scoreboard(window_width, window_height, font_title, font_score):
     global left_score, right_score
@@ -800,20 +559,17 @@ def draw_scoreboard(window_width, window_height, font_title, font_score):
 
     glPopAttrib()
 
-
 # =========================================================
 # CENA
 # =========================================================
 def draw_field_scene(grass_texture):
     draw_grass(grass_texture)
-    draw_stands()
     draw_field_lines()
     draw_goal_frame("left")
     draw_goal_frame("right")
     draw_goal_net("left")
     draw_goal_net("right")
     draw_all_corner_flags()
-
 
 # =========================================================
 # OPENGL
@@ -848,7 +604,6 @@ def set_inclined_camera():
         0.0, 1.0, 0.0
     )
 
-
 # =========================================================
 # LOOP PRINCIPAL
 # =========================================================
@@ -861,9 +616,10 @@ def main():
 
     try:
         grass_texture = load_texture("grass.jpg")
+        crowd_texture_1 = load_texture_alpha("torcida_mov1.png")
+        crowd_texture_2 = load_texture_alpha("torcida_mov2.png")
     except pygame.error as e:
-        print("Erro ao carregar 'grass.jpg'. Coloque a imagem na mesma pasta do arquivo Python.")
-        print(f"Detalhe: {e}")
+        print(f"Erro ao carregar as imagens: {e}")
         pygame.quit()
         sys.exit()
 
@@ -874,15 +630,28 @@ def main():
     clock = pygame.time.Clock()
     running = True
 
+    frame_counter = 0
+
     while running:
         for event in pygame.event.get():
             if event.type == QUIT:
                 running = False
 
+        frame_counter += 1
+
+        # alterna a cada X frames (ajuste para controlar velocidade)
+        if (frame_counter // 20) % 2 == 0:
+            current_crowd_texture = crowd_texture_1
+        else:
+            current_crowd_texture = crowd_texture_2
+
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
 
         set_inclined_camera()
         draw_field_scene(grass_texture)
+
+        draw_crowd_ui(current_crowd_texture)
+
         draw_scoreboard(
             WINDOW_WIDTH,
             WINDOW_HEIGHT,
@@ -895,7 +664,6 @@ def main():
 
     pygame.quit()
     sys.exit()
-
 
 if __name__ == "__main__":
     main()
