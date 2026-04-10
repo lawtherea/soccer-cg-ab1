@@ -7,6 +7,7 @@ from pygame.locals import DOUBLEBUF, OPENGL, QUIT
 from OpenGL.GL import *
 from OpenGL.GLU import *
 
+from bola import Bola
 # =========================================================
 # CONFIGURAÇÕES GERAIS
 # =========================================================
@@ -572,6 +573,13 @@ def draw_field_scene(grass_texture):
     draw_all_corner_flags()
 
 # =========================================================
+# BOLA
+# =========================================================
+def create_ball(raio: float, ):
+    pass
+
+
+# =========================================================
 # OPENGL
 # =========================================================
 def setup_opengl(width, height):
@@ -618,6 +626,7 @@ def main():
         grass_texture = load_texture("grass.jpg")
         crowd_texture_1 = load_texture_alpha("torcida_mov1.png")
         crowd_texture_2 = load_texture_alpha("torcida_mov2.png")
+        ball_texture = load_texture("textura_bola2.jpg")
     except pygame.error as e:
         print(f"Erro ao carregar as imagens: {e}")
         pygame.quit()
@@ -631,6 +640,8 @@ def main():
     running = True
 
     frame_counter = 0
+
+    bola = Bola('bola', 6.0, (0.0, 0.0, 0.0), ball_texture)
 
     while running:
         for event in pygame.event.get():
@@ -658,6 +669,8 @@ def main():
             scoreboard_font_title,
             scoreboard_font_score
         )
+
+        bola.draw()
 
         pygame.display.flip()
         clock.tick(60)
