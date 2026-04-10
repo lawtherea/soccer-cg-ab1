@@ -37,6 +37,17 @@ GOAL_POST_THICKNESS = 0.12
 FLAG_HEIGHT = 1.8
 
 # =========================================================
+# Dimesões personagem 
+# =========================================================
+
+ALTURA_MEBROS_TRONCO = 0.72 * 2
+LARGURA_PROFUNDIDADE_MEMBROS = 0.24 * 2
+PROFUNFIDADE_TRONCO = 0.24 * 2
+LARGURA_TRONCO = 0.48 * 2
+DIMENSOES_CABECA = 0.48 * 2
+ESPACO_CABECA_TRONCO = 0.12 * 2
+
+# =========================================================
 # PLACAR
 # =========================================================
 LEFT_TEAM_NAME = "CASA"
@@ -199,6 +210,63 @@ def draw_box(x1, y1, z1, x2, y2, z2, color):
     glVertex3f(x2, z2, y2)
     glVertex3f(x2, z2, y1)
     glEnd()
+
+def draw_generic_box(x1, y1, z1, x2, y2, z2, color, 
+                     tex_frente=None, tex_tras=None, 
+                     tex_dir=None, tex_esq=None, 
+                     tex_topo=None, tex_baixo=None):
+    
+    # Lista de definições das faces para iterar
+    # Cada face: (id_da_textura, lista_de_vertices_e_uvs)
+    faces = [
+        # Frente
+        (tex_frente, [
+            (0.0, 1.0, x1, z1, y1), (0.0, 0.0, x1, z2, y1), 
+            (1.0, 0.0, x1, z2, y2), (1.0, 1.0, x1, z1, y2)
+        ]),
+        # Trás
+        (tex_tras, [
+            (1.0, 1.0, x2, z1, y1), (0.0, 1.0, x2, z1, y2), 
+            (0.0, 0.0, x2, z2, y2), (1.0, 0.0, x2, z2, y1)
+        ]),
+        # Lateral Direita (referência original seu lateral)
+        (tex_dir, [
+            (0.0, 1.0, x1, z1, y2), (0.0, 0.0, x1, z2, y2), 
+            (1.0, 0.0, x2, z2, y2), (1.0, 1.0, x2, z1, y2)
+        ]),
+        # Lateral Esquerda
+        (tex_esq, [
+            (1.0, 1.0, x1, z1, y1), (0.0, 1.0, x2, z1, y1), 
+            (0.0, 0.0, x2, z2, y1), (1.0, 0.0, x1, z2, y1)
+        ]),
+        # Topo
+        (tex_topo, [
+            (0.0, 0.0, x1, z2, y1), (1.0, 0.0, x2, z2, y1), 
+            (1.0, 1.0, x2, z2, y2), (0.0, 1.0, x1, z2, y2)
+        ]),
+        # Baixo
+        (tex_baixo, [
+            (0.0, 0.0, x1, z1, y1), (0.0, 1.0, x1, z1, y2), 
+            (1.0, 1.0, x2, z1, y2), (1.0, 0.0, x2, z1, y1)
+        ])
+    ]
+
+    for tex_id, vertices in faces:
+        if tex_id is not None:
+            glEnable(GL_TEXTURE_2D)
+            glBindTexture(GL_TEXTURE_2D, tex_id)
+            glColor3f(1.0, 1.0, 1.0) # Cor neutra para não afetar a textura
+        else:
+            glDisable(GL_TEXTURE_2D)
+            glColor3fv(color) # Usa a cor sólida passada no parâmetro
+
+        glBegin(GL_QUADS)
+        for u, v, vx, vy, vz in vertices:
+            glTexCoord2f(u, v)
+            glVertex3f(vx, vy, vz)
+        glEnd()
+
+    glDisable(GL_TEXTURE_2D) # Garante que o estado saia limpo
 
 # =========================================================
 # GRAMADO
@@ -559,10 +627,262 @@ def draw_scoreboard(window_width, window_height, font_title, font_score):
 
     glPopAttrib()
 
+def desenhar_personagem_parado(x0, y0, z0, angulo, textures):
+    #Cores
+    white = (0.95, 0.95, 0.95)
+    dark_gray = (0.20, 0.20, 0.20)
+    soft_blue = (0.40, 0.60, 0.90)
+    emerald_green = (0.30, 0.70, 0.50)
+    sunset_orange = (1.00, 0.50, 0.30)
+    deep_purple = (0.50, 0.20, 0.70)
+
+    trunk_tex = textures["peito"]
+    costas = textures["costas"]
+
+    glPushMatrix()  # Salva o estado atual da matriz
+    
+    # Movemos origem para onde o personagem deve ficar
+    glTranslatef(x0, z0, y0)
+
+    x0 = 0
+    y0 = 0
+    z0 = 0
+    
+    #Rotaciona o personagem
+    glRotatef(angulo, 0.0, 1.0, 0.0)
+
+    #Perna direita
+    draw_generic_box(-(LARGURA_PROFUNDIDADE_MEMBROS/2) ,-(LARGURA_PROFUNDIDADE_MEMBROS), z0, LARGURA_PROFUNDIDADE_MEMBROS/2, 0, ALTURA_MEBROS_TRONCO, dark_gray, textures["perna"], textures["perna"], textures["perna"], textures["perna"], textures["short_topo"] )
+
+    #Perna esqueda
+    yPe = y0 + LARGURA_PROFUNDIDADE_MEMBROS
+    draw_generic_box(-(LARGURA_PROFUNDIDADE_MEMBROS/2), 0, 0, LARGURA_PROFUNDIDADE_MEMBROS/2, LARGURA_PROFUNDIDADE_MEMBROS, ALTURA_MEBROS_TRONCO, dark_gray, textures["perna"], textures["perna"], textures["perna"], textures["perna"], textures["short_topo"])
+    
+
+    #Tronco
+    zTr = z0 + ALTURA_MEBROS_TRONCO
+    draw_generic_box(-(PROFUNFIDADE_TRONCO/2), -(LARGURA_TRONCO/2), ALTURA_MEBROS_TRONCO, (PROFUNFIDADE_TRONCO/2), (LARGURA_TRONCO/2), 2 * ALTURA_MEBROS_TRONCO, white, textures["peito"], textures["costas"], textures["lateral_camisa"], textures["lateral_camisa"])
+
+    #Braco direito
+    zBd = z0 + ALTURA_MEBROS_TRONCO
+    yBd = y0 - LARGURA_PROFUNDIDADE_MEMBROS
+    draw_generic_box(-(PROFUNFIDADE_TRONCO/2),-(LARGURA_TRONCO/2 + LARGURA_PROFUNDIDADE_MEMBROS), ALTURA_MEBROS_TRONCO, (PROFUNFIDADE_TRONCO/2), -(LARGURA_TRONCO/2), ALTURA_MEBROS_TRONCO + ALTURA_MEBROS_TRONCO, white, textures["braco"], textures["braco"], textures["braco"], textures["braco"], textures["manga_topo"], textures["mao"])
+
+    #Braco direito
+    zBe = z0 + ALTURA_MEBROS_TRONCO
+    yBe = y0 + LARGURA_TRONCO
+    draw_generic_box(-(PROFUNFIDADE_TRONCO/2), LARGURA_TRONCO/2, ALTURA_MEBROS_TRONCO, (PROFUNFIDADE_TRONCO/2), LARGURA_TRONCO/2  + LARGURA_PROFUNDIDADE_MEMBROS, ALTURA_MEBROS_TRONCO + ALTURA_MEBROS_TRONCO, white, textures["braco"], textures["braco"], textures["braco"], textures["braco"], textures["manga_topo"], textures["mao"])
+
+    #Cabeca
+    zCa = z0 + ALTURA_MEBROS_TRONCO + ALTURA_MEBROS_TRONCO
+    xCa = x0 - ESPACO_CABECA_TRONCO
+    draw_generic_box(-(DIMENSOES_CABECA/2), -(DIMENSOES_CABECA/2), ALTURA_MEBROS_TRONCO + ALTURA_MEBROS_TRONCO, (DIMENSOES_CABECA/2), (DIMENSOES_CABECA/2), ALTURA_MEBROS_TRONCO + ALTURA_MEBROS_TRONCO + DIMENSOES_CABECA, deep_purple, textures["rosto"], textures["cabeca_topo_fundo"], textures["cabeca_lateral_esquerdo"], textures["cabeca_lateral_direita"], textures["cabeca_topo_fundo"])
+
+    glPopMatrix()  # Restaura a matriz para não afetar o próximo objeto
+
+def desenhar_personagem_passo1(x0, y0, z0, angulo, textures):
+    #Cores
+    white = (0.95, 0.95, 0.95)
+    dark_gray = (0.20, 0.20, 0.20)
+    soft_blue = (0.40, 0.60, 0.90)
+    emerald_green = (0.30, 0.70, 0.50)
+    sunset_orange = (1.00, 0.50, 0.30)
+    deep_purple = (0.50, 0.20, 0.70)
+
+    trunk_tex = textures["peito"]
+    costas = textures["costas"]
+
+    glPushMatrix()  # Salva o estado atual da matriz
+    
+    # Movemos origem para onde o personagem deve ficar
+    glTranslatef(x0, z0, y0)
+
+    x0 = 0
+    y0 = 0
+    z0 = 0
+    
+    #Rotaciona o personagem
+    glRotatef(angulo, 0.0, 1.0, 0.0)
+
+    #Perna direita
+    glPushMatrix()
+
+    glTranslatef(-(LARGURA_PROFUNDIDADE_MEMBROS/2), ALTURA_MEBROS_TRONCO, 0)
+    glRotatef(-15, 0.0, 0.0, 1.0)
+
+    draw_generic_box(0 , 0, -(ALTURA_MEBROS_TRONCO), LARGURA_PROFUNDIDADE_MEMBROS, -(LARGURA_PROFUNDIDADE_MEMBROS), 0, dark_gray, textures["perna"], textures["perna"], textures["perna"], textures["perna"], textures["short_topo"])
+
+    glPopMatrix()
+
+    #Perna esqueda
+    
+    glPushMatrix()
+
+    glTranslatef(LARGURA_PROFUNDIDADE_MEMBROS/2, ALTURA_MEBROS_TRONCO, 0)
+    glRotatef(15, 0.0, 0.0, 1.0)
+
+    yPe = y0 + LARGURA_PROFUNDIDADE_MEMBROS
+    draw_generic_box(-(LARGURA_PROFUNDIDADE_MEMBROS), 0, -(ALTURA_MEBROS_TRONCO), 0, LARGURA_PROFUNDIDADE_MEMBROS, 0, dark_gray, textures["perna"], textures["perna"], textures["perna"], textures["perna"], textures["short_topo"])
+
+    glPopMatrix()
+
+    #Tronco
+    zTr = z0 + ALTURA_MEBROS_TRONCO
+    draw_generic_box(-(PROFUNFIDADE_TRONCO/2), -(LARGURA_TRONCO/2), ALTURA_MEBROS_TRONCO, (PROFUNFIDADE_TRONCO/2), (LARGURA_TRONCO/2), 2 * ALTURA_MEBROS_TRONCO, white, textures["peito"], textures["costas"], textures["lateral_camisa"], textures["lateral_camisa"])
+
+    #Braco direito
+    glPushMatrix()
+
+    glTranslatef(0,  2* ALTURA_MEBROS_TRONCO, -(LARGURA_TRONCO/2))
+    glRotatef(30, 0.0, 0.0, 1.0)
+
+    draw_generic_box(-(LARGURA_PROFUNDIDADE_MEMBROS/2), 0, -ALTURA_MEBROS_TRONCO, (LARGURA_PROFUNDIDADE_MEMBROS/2), -(LARGURA_PROFUNDIDADE_MEMBROS), 0, white, textures["braco"], textures["braco"], textures["braco"], textures["braco"], textures["manga_topo"], textures["mao"])
+
+    glPopMatrix()
+
+    #Braco esquerdo
+    glPushMatrix()
+
+    glTranslatef(0,  2* ALTURA_MEBROS_TRONCO, (LARGURA_TRONCO/2))
+    glRotatef(-30, 0.0, 0.0, 1.0)
+
+    draw_generic_box(-(LARGURA_PROFUNDIDADE_MEMBROS/2), 0, -(ALTURA_MEBROS_TRONCO), LARGURA_PROFUNDIDADE_MEMBROS/2, LARGURA_PROFUNDIDADE_MEMBROS, 0, white, textures["braco"], textures["braco"], textures["braco"], textures["braco"], textures["manga_topo"], textures["mao"])
+
+    glPopMatrix()
+
+    #Cabeca
+    zCa = z0 + ALTURA_MEBROS_TRONCO + ALTURA_MEBROS_TRONCO
+    xCa = x0 - ESPACO_CABECA_TRONCO
+    draw_generic_box(-(DIMENSOES_CABECA/2), -(DIMENSOES_CABECA/2), ALTURA_MEBROS_TRONCO + ALTURA_MEBROS_TRONCO, (DIMENSOES_CABECA/2), (DIMENSOES_CABECA/2), ALTURA_MEBROS_TRONCO + ALTURA_MEBROS_TRONCO + DIMENSOES_CABECA, deep_purple, textures["rosto"], textures["cabeca_topo_fundo"], textures["cabeca_lateral_esquerdo"], textures["cabeca_lateral_direita"], textures["cabeca_topo_fundo"])
+
+    glPopMatrix()  # Restaura a matriz para não afetar o próximo objeto
+
+def desenhar_personagem_passo2(x0, y0, z0, angulo, textures):
+    #Cores
+    white = (0.95, 0.95, 0.95)
+    dark_gray = (0.20, 0.20, 0.20)
+    soft_blue = (0.40, 0.60, 0.90)
+    emerald_green = (0.30, 0.70, 0.50)
+    sunset_orange = (1.00, 0.50, 0.30)
+    deep_purple = (0.50, 0.20, 0.70)
+
+    trunk_tex = textures["peito"]
+    costas = textures["costas"]
+
+    glPushMatrix()  # Salva o estado atual da matriz
+    
+    # Movemos origem para onde o personagem deve ficar
+    glTranslatef(x0, z0, y0)
+
+    x0 = 0
+    y0 = 0
+    z0 = 0
+    
+    #Rotaciona o personagem
+    glRotatef(angulo, 0.0, 1.0, 0.0)
+
+    #Perna direita
+    glPushMatrix()
+
+    glTranslatef(-(LARGURA_PROFUNDIDADE_MEMBROS/2), ALTURA_MEBROS_TRONCO, (LARGURA_PROFUNDIDADE_MEMBROS))
+    glRotatef(-15, 0.0, 0.0, 1.0)
+
+    draw_generic_box(0 , 0, -(ALTURA_MEBROS_TRONCO), LARGURA_PROFUNDIDADE_MEMBROS, -(LARGURA_PROFUNDIDADE_MEMBROS), 0, dark_gray, textures["perna"], textures["perna"], textures["perna"], textures["perna"], textures["short_topo"])
+
+    glPopMatrix()
+
+    #Perna esqueda
+    
+    glPushMatrix()
+
+    glTranslatef(LARGURA_PROFUNDIDADE_MEMBROS/2, ALTURA_MEBROS_TRONCO, -(LARGURA_PROFUNDIDADE_MEMBROS))
+    glRotatef(15, 0.0, 0.0, 1.0)
+
+    yPe = y0 + LARGURA_PROFUNDIDADE_MEMBROS
+    draw_generic_box(-(LARGURA_PROFUNDIDADE_MEMBROS), 0, -(ALTURA_MEBROS_TRONCO), 0, LARGURA_PROFUNDIDADE_MEMBROS, 0, dark_gray, textures["perna"], textures["perna"], textures["perna"], textures["perna"], textures["short_topo"])
+
+    glPopMatrix()
+
+    #Tronco
+    zTr = z0 + ALTURA_MEBROS_TRONCO
+    draw_generic_box(-(PROFUNFIDADE_TRONCO/2), -(LARGURA_TRONCO/2), ALTURA_MEBROS_TRONCO, (PROFUNFIDADE_TRONCO/2), (LARGURA_TRONCO/2), 2 * ALTURA_MEBROS_TRONCO, white, textures["peito"], textures["costas"], textures["lateral_camisa"], textures["lateral_camisa"])
+
+    #Braco direito
+    glPushMatrix()
+
+    glTranslatef(0,  2* ALTURA_MEBROS_TRONCO, -(LARGURA_TRONCO/2))
+    glRotatef(-30, 0.0, 0.0, 1.0)
+
+    draw_generic_box(-(LARGURA_PROFUNDIDADE_MEMBROS/2), 0, -ALTURA_MEBROS_TRONCO, (LARGURA_PROFUNDIDADE_MEMBROS/2), -(LARGURA_PROFUNDIDADE_MEMBROS), 0, white, textures["braco"], textures["braco"], textures["braco"], textures["braco"], textures["manga_topo"], textures["mao"])
+
+    glPopMatrix()
+
+    #Braco esquerdo
+    glPushMatrix()
+
+    glTranslatef(0,  2* ALTURA_MEBROS_TRONCO, (LARGURA_TRONCO/2))
+    glRotatef(30, 0.0, 0.0, 1.0)
+
+    draw_generic_box(-(LARGURA_PROFUNDIDADE_MEMBROS/2), 0, -(ALTURA_MEBROS_TRONCO), LARGURA_PROFUNDIDADE_MEMBROS/2, LARGURA_PROFUNDIDADE_MEMBROS, 0, white, textures["braco"], textures["braco"], textures["braco"], textures["braco"], textures["manga_topo"], textures["mao"])
+
+    glPopMatrix()
+
+    #Cabeca
+    zCa = z0 + ALTURA_MEBROS_TRONCO + ALTURA_MEBROS_TRONCO
+    xCa = x0 - ESPACO_CABECA_TRONCO
+    draw_generic_box(-(DIMENSOES_CABECA/2), -(DIMENSOES_CABECA/2), ALTURA_MEBROS_TRONCO + ALTURA_MEBROS_TRONCO, (DIMENSOES_CABECA/2), (DIMENSOES_CABECA/2), ALTURA_MEBROS_TRONCO + ALTURA_MEBROS_TRONCO + DIMENSOES_CABECA, deep_purple, textures["rosto"], textures["cabeca_topo_fundo"], textures["cabeca_lateral_esquerdo"], textures["cabeca_lateral_direita"], textures["cabeca_topo_fundo"])
+
+    glPopMatrix()  # Restaura a matriz para não afetar o próximo objeto
+
+def load_textures_players_br():
+    try:
+        textures = {
+            "peito": load_texture("peito3.png"),
+            "costas": load_texture("costas2.png"),
+            "lateral_camisa": load_texture("lateral_camisa_br.png"),
+            "perna": load_texture("pernas_br.png"),
+            "short_topo": load_texture("short_topo_br.png"),
+            "braco": load_texture("braco_br.png"),
+            "manga_topo": load_texture("manga_topo_br.png"),
+            "mao": load_texture("mao_br.png"),
+            "rosto": load_texture("rosto_br.png"),
+            "cabeca_lateral_direita": load_texture("cabeca_lateral_direita_br.png"),
+            "cabeca_lateral_esquerdo": load_texture("cabeca_lateral_esquerda_br.png"),
+            "cabeca_topo_fundo": load_texture("cabeca_topo_fundo_br.png")
+        }
+    except Exception as e:
+        print(f"Erro ao carregar textura do tronco: {e}")
+        trunk_texture = None # Fallback caso a imagem não exista
+
+    return textures
+
+def load_textures_players_ar():
+    try:
+        textures = {
+            "peito": load_texture("peito_ar.png"),
+            "costas": load_texture("costas_ar.png"),
+            "lateral_camisa": load_texture("lateral_camisa_ar.png"),
+            "perna": load_texture("perna_ar.png"),
+            "short_topo": load_texture("short_manga_topo_ar.png"),
+            "braco": load_texture("braco_ar.png"),
+            "manga_topo": load_texture("short_manga_topo_ar.png"),
+            "mao": load_texture("mao_ar.png"),
+            "rosto": load_texture("rosto_ar.png"),
+            "cabeca_lateral_direita": load_texture("cabeca_lateral_direita_ar.png"),
+            "cabeca_lateral_esquerdo": load_texture("cabeca_lateral_esquerda_ar.png"),
+            "cabeca_topo_fundo": load_texture("cabeca_topo_fundo_ar.png")
+        }
+    except Exception as e:
+        print(f"Erro ao carregar textura do tronco: {e}")
+        trunk_texture = None # Fallback caso a imagem não exista
+
+    return textures
+
+
 # =========================================================
 # CENA
 # =========================================================
-def draw_field_scene(grass_texture):
+def draw_field_scene(grass_texture, p_x, p_y, p_angle, p_moving, p_frame, texture_player_br, texture_player_ar):
     draw_grass(grass_texture)
     draw_field_lines()
     draw_goal_frame("left")
@@ -570,6 +890,25 @@ def draw_field_scene(grass_texture):
     draw_goal_net("left")
     draw_goal_net("right")
     draw_all_corner_flags()
+    
+    # Lógica de Animação do Jogador
+    if not p_moving:
+        desenhar_personagem_parado(p_x - 10, p_y, 0, p_angle, texture_player_br)
+    else:
+        # Alterna entre passo 1 e 2 a cada 10 frames
+        if (p_frame // 10) % 2 == 0:
+            desenhar_personagem_passo1(p_x - 10, p_y, 0, p_angle, texture_player_br)
+        else:
+            desenhar_personagem_passo2(p_x - 10, p_y, 0, p_angle, texture_player_br)
+
+    if not p_moving:
+        desenhar_personagem_parado(p_x + 10, p_y, 0, p_angle, texture_player_ar)
+    else:
+        # Alterna entre passo 1 e 2 a cada 10 frames
+        if (p_frame // 10) % 2 == 0:
+            desenhar_personagem_passo1(p_x + 10, p_y, 0, p_angle, texture_player_ar)
+        else:
+            desenhar_personagem_passo2(p_x + 10, p_y, 0, p_angle, texture_player_ar)
 
 # =========================================================
 # OPENGL
@@ -623,6 +962,17 @@ def main():
         pygame.quit()
         sys.exit()
 
+    try:
+        trunk_texture = load_texture("peito3.png")
+        costas  = load_texture("costas2.png")
+        rosto_br  = load_texture("rosto_br.png")
+    except Exception as e:
+        print(f"Erro ao carregar textura do tronco: {e}")
+        trunk_texture = None 
+
+    texture_player_br = load_textures_players_br()
+    texture_player_ar = load_textures_players_ar()
+
     pygame.font.init()
     scoreboard_font_title = pygame.font.SysFont("Arial", 22, bold=True)
     scoreboard_font_score = pygame.font.SysFont("Arial", 34, bold=True)
@@ -632,14 +982,58 @@ def main():
 
     frame_counter = 0
 
+    # Estado do jogador
+    player_x, player_y = 0.0, 0.0
+    player_angle = 0.0
+    is_moving = False
+    walk_frame = 0  # Controla a alternância entre passo 1 e passo 2
+
     while running:
         for event in pygame.event.get():
             if event.type == QUIT:
                 running = False
 
+        # Captura Teclas
+        keys = pygame.key.get_pressed()
+        speed = 0.2
+        is_moving = False
+        
+        dx, dy = 0, 0
+        if keys[pygame.K_LEFT]:
+            dx = -speed
+            player_angle = 0
+            is_moving = True
+        elif keys[pygame.K_RIGHT]:
+            dx = speed
+            player_angle = 180
+            is_moving = True
+        
+        if keys[pygame.K_UP]:
+            dy = -speed
+            player_angle = 270
+            is_moving = True
+        elif keys[pygame.K_DOWN]:
+            dy = speed
+            player_angle = 90
+            is_moving = True
+
+        # Ajuste de ângulo para diagonais
+        if dx != 0 and dy != 0:
+            if dx > 0 and dy > 0: player_angle = 135
+            if dx > 0 and dy < 0: player_angle = 225
+            if dx < 0 and dy > 0: player_angle = 45
+            if dx < 0 and dy < 0: player_angle = 315
+
+        player_x += dx
+        player_y += dy
+        
+        # Contador para animação de passos
+        if is_moving:
+            walk_frame += 1
+
         frame_counter += 1
 
-        # alterna a cada X frames (ajuste para controlar velocidade)
+        # alterna a cada X frames
         if (frame_counter // 20) % 2 == 0:
             current_crowd_texture = crowd_texture_1
         else:
@@ -648,7 +1042,7 @@ def main():
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
 
         set_inclined_camera()
-        draw_field_scene(grass_texture)
+        draw_field_scene(grass_texture, player_x, player_y, player_angle, is_moving, walk_frame, texture_player_br, texture_player_ar)
 
         draw_crowd_ui(current_crowd_texture)
 
