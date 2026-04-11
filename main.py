@@ -276,10 +276,10 @@ def draw_outer_area():
     half_width = FIELD_WIDTH / 2
 
     draw_filled_rectangle(
-        -half_length - OUTER_MARGIN,
-        -half_width - OUTER_MARGIN,
-        half_length + OUTER_MARGIN,
-        half_width + OUTER_MARGIN,
+        -half_length ,
+        -half_width ,
+        half_length ,
+        half_width ,
         (0.09, 0.22, 0.09),
         z=-0.02
     )
@@ -837,18 +837,18 @@ def desenhar_personagem_passo2(x0, y0, z0, angulo, textures):
 def load_textures_players_br():
     try:
         textures = {
-            "peito": load_texture("peito3.png"),
-            "costas": load_texture("costas2.png"),
-            "lateral_camisa": load_texture("lateral_camisa_br.png"),
-            "perna": load_texture("pernas_br.png"),
-            "short_topo": load_texture("short_topo_br.png"),
-            "braco": load_texture("braco_br.png"),
-            "manga_topo": load_texture("manga_topo_br.png"),
-            "mao": load_texture("mao_br.png"),
-            "rosto": load_texture("rosto_br.png"),
-            "cabeca_lateral_direita": load_texture("cabeca_lateral_direita_br.png"),
-            "cabeca_lateral_esquerdo": load_texture("cabeca_lateral_esquerda_br.png"),
-            "cabeca_topo_fundo": load_texture("cabeca_topo_fundo_br.png")
+            "peito": load_texture("texturas_br\\peito3.png"),
+            "costas": load_texture("texturas_br\\costas2.png"),
+            "lateral_camisa": load_texture("texturas_br\\lateral_camisa_br.png"),
+            "perna": load_texture("texturas_br\\pernas_br.png"),
+            "short_topo": load_texture("texturas_br\\short_topo_br.png"),
+            "braco": load_texture("texturas_br\\braco_br.png"),
+            "manga_topo": load_texture("texturas_br\\manga_topo_br.png"),
+            "mao": load_texture("texturas_br\\mao_br.png"),
+            "rosto": load_texture("texturas_br\\rosto_br.png"),
+            "cabeca_lateral_direita": load_texture("texturas_br\\cabeca_lateral_direita_br.png"),
+            "cabeca_lateral_esquerdo": load_texture("texturas_br\\cabeca_lateral_esquerda_br.png"),
+            "cabeca_topo_fundo": load_texture("texturas_br\\cabeca_topo_fundo_br.png")
         }
     except Exception as e:
         print(f"Erro ao carregar textura do tronco: {e}")
@@ -859,18 +859,18 @@ def load_textures_players_br():
 def load_textures_players_ar():
     try:
         textures = {
-            "peito": load_texture("peito_ar.png"),
-            "costas": load_texture("costas_ar.png"),
-            "lateral_camisa": load_texture("lateral_camisa_ar.png"),
-            "perna": load_texture("perna_ar.png"),
-            "short_topo": load_texture("short_manga_topo_ar.png"),
-            "braco": load_texture("braco_ar.png"),
-            "manga_topo": load_texture("short_manga_topo_ar.png"),
-            "mao": load_texture("mao_ar.png"),
-            "rosto": load_texture("rosto_ar.png"),
-            "cabeca_lateral_direita": load_texture("cabeca_lateral_direita_ar.png"),
-            "cabeca_lateral_esquerdo": load_texture("cabeca_lateral_esquerda_ar.png"),
-            "cabeca_topo_fundo": load_texture("cabeca_topo_fundo_ar.png")
+            "peito": load_texture("texturas_ar\\peito_ar.png"),
+            "costas": load_texture("texturas_ar\\costas_ar.png"),
+            "lateral_camisa": load_texture("texturas_ar\\lateral_camisa_ar.png"),
+            "perna": load_texture("texturas_ar\\perna_ar.png"),
+            "short_topo": load_texture("texturas_ar\\short_manga_topo_ar.png"),
+            "braco": load_texture("texturas_ar\\braco_ar.png"),
+            "manga_topo": load_texture("texturas_ar\\short_manga_topo_ar.png"),
+            "mao": load_texture("texturas_ar\\mao_ar.png"),
+            "rosto": load_texture("texturas_ar\\rosto_ar.png"),
+            "cabeca_lateral_direita": load_texture("texturas_ar\\cabeca_lateral_direita_ar.png"),
+            "cabeca_lateral_esquerdo": load_texture("texturas_ar\\cabeca_lateral_esquerda_ar.png"),
+            "cabeca_topo_fundo": load_texture("texturas_ar\\cabeca_topo_fundo_ar.png")
         }
     except Exception as e:
         print(f"Erro ao carregar textura do tronco: {e}")
@@ -961,14 +961,7 @@ def main():
         print(f"Erro ao carregar as imagens: {e}")
         pygame.quit()
         sys.exit()
-
-    try:
-        trunk_texture = load_texture("peito3.png")
-        costas  = load_texture("costas2.png")
-        rosto_br  = load_texture("rosto_br.png")
-    except Exception as e:
-        print(f"Erro ao carregar textura do tronco: {e}")
-        trunk_texture = None 
+ 
 
     texture_player_br = load_textures_players_br()
     texture_player_ar = load_textures_players_ar()
@@ -1042,9 +1035,9 @@ def main():
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
 
         set_inclined_camera()
+        draw_crowd_ui(current_crowd_texture)
         draw_field_scene(grass_texture, player_x, player_y, player_angle, is_moving, walk_frame, texture_player_br, texture_player_ar)
 
-        draw_crowd_ui(current_crowd_texture)
 
         draw_scoreboard(
             WINDOW_WIDTH,
