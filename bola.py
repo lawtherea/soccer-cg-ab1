@@ -13,7 +13,7 @@ from OpenGL.GL import (
        GL_TEXTURE_ENV_MODE,
        GL_REPLACE,
        GL_TRUE,
-       GL_MODELVIEW, GL_TEXTURE_2D, GL_TEXTURE_ENV
+       GL_MODELVIEW, GL_TEXTURE_2D, GL_TEXTURE_ENV, glPopMatrix
 )
 import math
 
@@ -35,12 +35,6 @@ class GameObject(ABC):
 
     def get_position(self) -> tuple[float, ...]:
         return tuple(self.position)
-
-    # def set_rotation(self, x: float, y: float, z: float) -> None:
-    #     self.rotation = [x, y, z]
-    #
-    # def get_rotation(self) -> tuple:
-    #     return tuple(self.rotation)
 
     def translate(self, dx: float, dy: float, dz: float) -> None:
         self.position[0] += dx
@@ -73,15 +67,20 @@ class Bola(GameObject):
         """Rotaciona a bola de acordo com sua movimentacao"""
         distancia = math.hypot(dx, dz)
         if distancia > 0:
-            delta_angulo: float = (distancia / self.raio) * (180.0 * math.pi)
+            delta_angulo: float = (distancia / self.raio) * (180.0 * math.pi) * 0.2
             self.angulo_rotacao += delta_angulo
             return delta_angulo
 
         return 0.0
 
+    def set_rotacao(self, direcao: int, rotacao_x: int, rotacao_z: int) -> None:
+        self.direcao_de_rotacao = direcao
+        self.eixo_rotacao_x = rotacao_x
+        self.eixo_rotacao_z = rotacao_z
+
     @override
     def translate(self, dx: float, dy: float, dz: float) -> None:
-        super().translate(dx, 0.0, dz)
+        super().translate(dx, dy, dz)
 
         _ = self.set_rotacao_movimento(dx, dz)
 
@@ -119,6 +118,8 @@ class Bola(GameObject):
             self._draw_textured()
         else:
             self._draw_solid()
+
+        glPopMatrix()
 
     @override
     def get_info(self) -> dict[str, str | int | float | list | tuple]:

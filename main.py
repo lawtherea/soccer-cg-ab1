@@ -28,9 +28,9 @@ PENALTY_MARK_DISTANCE = 11.0
 CORNER_ARC_RADIUS = 1.0
 PENALTY_ARC_RADIUS = 9.15
 
-GOAL_WIDTH = 7.32
-GOAL_HEIGHT = 2.44
-GOAL_DEPTH = 2.44
+GOAL_WIDTH = 7.32 * 1.4
+GOAL_HEIGHT = 2.44 * 1.4
+GOAL_DEPTH = 2.44 * 1.4
 
 OUTER_MARGIN = 18.0
 
@@ -225,7 +225,7 @@ def draw_textured_grass(texture_id):
     glBindTexture(GL_TEXTURE_2D, texture_id)
     glColor3f(1.0, 1.0, 1.0)
 
-    repeat_x = 14.0
+    repeat_x = 2.0
     repeat_y = 9.0
 
     glBegin(GL_QUADS)
@@ -641,12 +641,33 @@ def main():
 
     frame_counter = 0
 
-    bola = Bola('bola', 6.0, (0.0, 0.0, 0.0), ball_texture)
+    bola = Bola('bola', 1.0, (0.0, 1.0, 0.0), ball_texture)
+    velocidade_bola: float = 0.25
 
     while running:
+        dx = dz = 0.0
         for event in pygame.event.get():
             if event.type == QUIT:
                 running = False
+
+        keys = pygame.key.get_pressed()
+        if keys[pygame.K_LEFT]:
+            dx = -velocidade_bola
+            bola.set_rotacao(1, 0, 1)
+
+        if keys[pygame.K_RIGHT]:
+            dx = velocidade_bola
+            bola.set_rotacao(-1, 0, 1)
+
+        if keys[pygame.K_UP]:
+            dz = -velocidade_bola
+            bola.set_rotacao(-1, 1, 0)
+
+        if keys[pygame.K_DOWN]:
+            dz = velocidade_bola
+            bola.set_rotacao(1, 1, 0)
+
+        bola.translate(dx, 0.0, dz)
 
         frame_counter += 1
 
@@ -659,6 +680,7 @@ def main():
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
 
         set_inclined_camera()
+
         draw_field_scene(grass_texture)
 
         draw_crowd_ui(current_crowd_texture)
