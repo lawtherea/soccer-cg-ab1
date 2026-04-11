@@ -573,13 +573,6 @@ def draw_field_scene(grass_texture):
     draw_all_corner_flags()
 
 # =========================================================
-# BOLA
-# =========================================================
-def create_ball(raio: float, ):
-    pass
-
-
-# =========================================================
 # OPENGL
 # =========================================================
 def setup_opengl(width, height):
@@ -641,7 +634,8 @@ def main():
 
     frame_counter = 0
 
-    bola = Bola('bola', 1.0, (0.0, 1.0, 0.0), ball_texture)
+    raio: float = 1.0
+    bola = Bola('bola', raio, (0.0, raio, 0.0), ball_texture)
     velocidade_bola: float = 0.25
 
     while running:
