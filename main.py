@@ -67,7 +67,10 @@ class JogadorSimulado:
         self.pos_inicial = (x, y)
         self.time = time  # "esquerda" ou "direita"
         self.textures = textures
-        self.angulo = 0
+        if self.time == "esquerda":
+            self.angulo = 180
+        else:
+            self.angulo = 0
         self.moving = False
 
     def update(self, bola_x, bola_z):
@@ -1006,16 +1009,28 @@ def main():
     bola = Bola('bola', raio, (0.0, raio, 0.0), ball_texture)
     velocidade_bola: float = 0.25
 
-    # Inicialização dos jogadores
+    # Configuração de formação 4-4-2
+    # Formato: (x, y) -> y representa a profundidade do campo (eixo Z no OpenGL)
+    posicoes_base = [
+        (-50, 0),    # Goleiro
+        (-35, -20), (-35, -7), (-35, 7), (-35, 20), # Defesa
+        (-20, -20), (-20, -7), (-20, 7), (-20, 20), # Meio-campo
+        (-7, -10),  (-7, 10)  # Ataque
+    ]
+
     jogadores_esquerda = []
     jogadores_direita = []
 
-    # Posicionamento inicial (exemplo simples em linha ou formação)
-    for i in range(11):
-        # Espalha jogadores no lado esquerdo (x entre -50 e -5)
-        jogadores_esquerda.append(JogadorSimulado(-10 - (i*3), (i-5)*6, "esquerda", texture_player_br))
-        # Espalha jogadores no lado direito (x entre 5 e 50)
-        jogadores_direita.append(JogadorSimulado(10 + (i*3), (i-5)*6, "direita", texture_player_ar))
+    # Criando Time da Esquerda (Brasil)
+    for pos in posicoes_base:
+        px, py = pos
+        jogadores_esquerda.append(JogadorSimulado(px, py, "esquerda", texture_player_br))
+
+    # Criando Time da Direita (Argentina)
+    # Invertemos o sinal de X para espelhar a posição no outro lado
+    for pos in posicoes_base:
+        px, py = pos
+        jogadores_direita.append(JogadorSimulado(-px, py, "direita", texture_player_ar))
 
     while running:
         dx = dz = 0.0
@@ -1023,21 +1038,35 @@ def main():
             if event.type == QUIT:
                 running = False
 
+        # No loop principal, pegue a posição da bola:
+        pos_bola = bola.get_position() # Supondo que sua classe Bola tenha esse método
+        bx, by, bz = pos_bola
+
         keys = pygame.key.get_pressed()
         if keys[pygame.K_LEFT]:
-            dx = -velocidade_bola
+            if bx > -(FIELD_LENGTH/2):
+                dx = -velocidade_bola
+            elif bz > -(GOAL_WIDTH/2) and bz < (GOAL_WIDTH/2):
+                if bx > -(FIELD_LENGTH/2) -(GOAL_DEPTH):
+                    dx = -velocidade_bola
             bola.set_rotacao(1, 0, 1)
 
         if keys[pygame.K_RIGHT]:
-            dx = velocidade_bola
+            if bx < (FIELD_LENGTH/2):
+                dx = +velocidade_bola
+            elif bz > -(GOAL_WIDTH/2) and bz < (GOAL_WIDTH/2):
+                if bx < (FIELD_LENGTH/2) + (GOAL_DEPTH):
+                    dx = velocidade_bola
             bola.set_rotacao(-1, 0, 1)
 
         if keys[pygame.K_UP]:
-            dz = -velocidade_bola
+            if bz > -(FIELD_WIDTH/2):
+                dz = -velocidade_bola
             bola.set_rotacao(-1, 1, 0)
 
         if keys[pygame.K_DOWN]:
-            dz = velocidade_bola
+            if bz < (FIELD_WIDTH/2):
+                dz = velocidade_bola
             bola.set_rotacao(1, 1, 0)
 
         bola.translate(dx, 0.0, dz)
@@ -1065,10 +1094,6 @@ def main():
         )
 
         bola.draw()
-
-        # No loop principal, pegue a posição da bola:
-        pos_bola = bola.get_position() # Supondo que sua classe Bola tenha esse método
-        bx, by, bz = pos_bola
 
         # Atualiza e Desenha Jogadores
         for j in jogadores_esquerda + jogadores_direita:
