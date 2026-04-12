@@ -7,6 +7,7 @@ from pygame.locals import DOUBLEBUF, OPENGL, QUIT
 from OpenGL.GL import *
 from OpenGL.GLU import *
 
+from bola import Bola
 # =========================================================
 # CONFIGURAÇÕES GERAIS
 # =========================================================
@@ -27,9 +28,9 @@ PENALTY_MARK_DISTANCE = 11.0
 CORNER_ARC_RADIUS = 1.0
 PENALTY_ARC_RADIUS = 9.15
 
-GOAL_WIDTH = 7.32
-GOAL_HEIGHT = 2.44
-GOAL_DEPTH = 2.44
+GOAL_WIDTH = 7.32 * 1.4
+GOAL_HEIGHT = 2.44 * 1.4
+GOAL_DEPTH = 2.44 * 1.4
 
 OUTER_MARGIN = 18.0
 
@@ -292,7 +293,7 @@ def draw_textured_grass(texture_id):
     glBindTexture(GL_TEXTURE_2D, texture_id)
     glColor3f(1.0, 1.0, 1.0)
 
-    repeat_x = 14.0
+    repeat_x = 2.0
     repeat_y = 9.0
 
     glBegin(GL_QUADS)
@@ -890,6 +891,8 @@ def draw_field_scene(grass_texture, p_x, p_y, p_angle, p_moving, p_frame, textur
     draw_goal_net("left")
     draw_goal_net("right")
     draw_all_corner_flags()
+    draw_goal_net("right")
+    draw_all_corner_flags()
     
     # Lógica de Animação do Jogador
     if not p_moving:
@@ -909,6 +912,14 @@ def draw_field_scene(grass_texture, p_x, p_y, p_angle, p_moving, p_frame, textur
             desenhar_personagem_passo1(p_x + 10, p_y, 0, p_angle, texture_player_ar)
         else:
             desenhar_personagem_passo2(p_x + 10, p_y, 0, p_angle, texture_player_ar)
+
+# =========================================================
+# BOLA
+# =========================================================
+def create_ball(raio: float, ):
+    pass
+
+
 
 # =========================================================
 # OPENGL
@@ -957,6 +968,7 @@ def main():
         grass_texture = load_texture("grass.jpg")
         crowd_texture_1 = load_texture_alpha("torcida_mov1.png")
         crowd_texture_2 = load_texture_alpha("torcida_mov2.png")
+        ball_texture = load_texture("textura_bola2.jpg")
     except pygame.error as e:
         print(f"Erro ao carregar as imagens: {e}")
         pygame.quit()
@@ -975,54 +987,34 @@ def main():
 
     frame_counter = 0
 
-    # Estado do jogador
-    player_x, player_y = 0.0, 0.0
-    player_angle = 0.0
-    is_moving = False
-    walk_frame = 0  # Controla a alternância entre passo 1 e passo 2
+    raio: float = 1.0
+    bola = Bola('bola', raio, (0.0, raio, 0.0), ball_texture)
+    velocidade_bola: float = 0.25
 
     while running:
+        dx = dz = 0.0
         for event in pygame.event.get():
             if event.type == QUIT:
                 running = False
 
-        # Captura Teclas
         keys = pygame.key.get_pressed()
-        speed = 0.2
-        is_moving = False
-        
-        dx, dy = 0, 0
         if keys[pygame.K_LEFT]:
-            dx = -speed
-            player_angle = 0
-            is_moving = True
-        elif keys[pygame.K_RIGHT]:
-            dx = speed
-            player_angle = 180
-            is_moving = True
-        
+            dx = -velocidade_bola
+            bola.set_rotacao(1, 0, 1)
+
+        if keys[pygame.K_RIGHT]:
+            dx = velocidade_bola
+            bola.set_rotacao(-1, 0, 1)
+
         if keys[pygame.K_UP]:
-            dy = -speed
-            player_angle = 270
-            is_moving = True
-        elif keys[pygame.K_DOWN]:
-            dy = speed
-            player_angle = 90
-            is_moving = True
+            dz = -velocidade_bola
+            bola.set_rotacao(-1, 1, 0)
 
-        # Ajuste de ângulo para diagonais
-        if dx != 0 and dy != 0:
-            if dx > 0 and dy > 0: player_angle = 135
-            if dx > 0 and dy < 0: player_angle = 225
-            if dx < 0 and dy > 0: player_angle = 45
-            if dx < 0 and dy < 0: player_angle = 315
+        if keys[pygame.K_DOWN]:
+            dz = velocidade_bola
+            bola.set_rotacao(1, 1, 0)
 
-        player_x += dx
-        player_y += dy
-        
-        # Contador para animação de passos
-        if is_moving:
-            walk_frame += 1
+        bola.translate(dx, 0.0, dz)
 
         frame_counter += 1
 
@@ -1035,8 +1027,9 @@ def main():
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
 
         set_inclined_camera()
+
         draw_crowd_ui(current_crowd_texture)
-        draw_field_scene(grass_texture, player_x, player_y, player_angle, is_moving, walk_frame, texture_player_br, texture_player_ar)
+        draw_field_scene(grass_texture, 0, 0, 0, 0, 0, texture_player_br, texture_player_ar)
 
 
         draw_scoreboard(
@@ -1045,6 +1038,8 @@ def main():
             scoreboard_font_title,
             scoreboard_font_score
         )
+
+        bola.draw()
 
         pygame.display.flip()
         clock.tick(60)
