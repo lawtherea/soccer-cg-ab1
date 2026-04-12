@@ -57,14 +57,29 @@ RIGHT_TEAM_NAME = "VISITANTE"
 left_score = 0
 right_score = 0
 
+# =========================================================
+# POSICOES INICAIS JOGADORES
+# =========================================================
 
+posicoes_base = [
+        (-50, 0),    # Goleiro
+        (-35, -20), (-35, -7), (-35, 7), (-35, 20), # Defesa
+        (-20, -20), (-20, -7), (-20, 7), (-20, 20), # Meio-campo
+        (-7, -10),  (-7, 10)  # Ataque
+    ]
 
+# =========================================================
+# Alcance e velocidade do jogador
+# =========================================================
+
+AlCALNCE_JOGADOR = 15
+VELOCIDADE_JOGADOR = 0.15
 
 class JogadorSimulado:
-    def __init__(self, x, y, time, textures):
+    def __init__(self, x, z, time, textures):
         self.x = x
-        self.y = y
-        self.pos_inicial = (x, y)
+        self.z = z
+        self.pos_inicial = (x, z)
         self.time = time  # "esquerda" ou "direita"
         self.textures = textures
         if self.time == "esquerda":
@@ -74,25 +89,51 @@ class JogadorSimulado:
         self.moving = False
 
     def update(self, bola_x, bola_z):
-        # Define se a bola está no seu lado do campo
+        # Define se a bola esta no seu lado do campo
         bola_no_meu_lado = (self.time == "esquerda" and bola_x < 0) or \
                            (self.time == "direita" and bola_x > 0)
         
-        if bola_no_meu_lado:
+        # Define se a bola esta na sua area de alcance
+        bola_meu_alcance = ((bola_x < self.pos_inicial[0]+AlCALNCE_JOGADOR and bola_x > self.pos_inicial[0]-AlCALNCE_JOGADOR) \
+                            and (bola_z < self.pos_inicial[1]+AlCALNCE_JOGADOR and bola_z > self.pos_inicial[1]-AlCALNCE_JOGADOR))
+        
+        if bola_no_meu_lado and bola_meu_alcance:
             self.moving = True
             # Calcula a direção para a bola
             dx = bola_x - self.x
-            dz = bola_z - self.y # No seu sistema, y do jogo é o z do OpenGL
+            dz = bola_z - self.z 
             
             # Move o jogador (velocidade ajustável)
             distancia = math.sqrt(dx**2 + dz**2)
             if distancia > 0.5: # Para não "tremer" em cima da bola
-                self.x += (dx / distancia) * 0.15
-                self.y += (dz / distancia) * 0.15
+                self.x += (dx / distancia) * VELOCIDADE_JOGADOR
+                self.z += (dz / distancia) * VELOCIDADE_JOGADOR
                 # Calcula ângulo para olhar para a bola
                 self.angulo = math.degrees(math.atan2(dx, dz) + 90)
-        else:
+        elif self.x == self.pos_inicial[0] and self.z == self.pos_inicial[1] :
             self.moving = False
+            # Calcula a direção para a bola
+            dx = bola_x - self.x
+            dz = bola_z - self.z
+            # Calcula ângulo para olhar para a bola
+            self.angulo = math.degrees(math.atan2(dx, dz) + 90)
+            
+        else:
+            self.moving = True
+            # Calcula a direção para a posicao de origem
+            dx = self.pos_inicial[0] - self.x
+            dz = self.pos_inicial[1] - self.z 
+            
+            # Move o jogador 
+            distancia = math.sqrt(dx**2 + dz**2)
+            if distancia > 0.5: # Para não "tremer" em cima da bola
+                self.x += (dx / distancia) * VELOCIDADE_JOGADOR
+                self.z += (dz / distancia) * VELOCIDADE_JOGADOR
+            else:
+                self.x = self.pos_inicial[0]
+                self.z = self.pos_inicial[1]
+            # Calcula ângulo para olhar para a posicao de origem
+            self.angulo = math.degrees(math.atan2(dx, dz) + 90)
 
 # =========================================================
 # TEXTURA
@@ -932,6 +973,23 @@ def draw_field_scene(grass_texture, p_x, p_y, p_angle, p_moving, p_frame, textur
     draw_all_corner_flags()
 
 # =========================================================
+# Desenha jogadores
+# =========================================================
+def draw_players(jogadores_esquerda, jogadores_direita, bx, bz, frame_counter):
+    for j in jogadores_esquerda + jogadores_direita:
+        j.update(bx, bz)
+            
+        # Lógica de animação baseada no frame_counter que você já tem
+        if not j.moving:
+            desenhar_personagem_parado(j.x, j.z, 0, j.angulo, j.textures)
+        else:
+            if (frame_counter // 10) % 2 == 0:
+                desenhar_personagem_passo1(j.x, j.z, 0, j.angulo, j.textures)
+            else:
+                desenhar_personagem_passo2(j.x, j.z, 0, j.angulo, j.textures)
+
+
+# =========================================================
 # BOLA
 # =========================================================
 def create_ball(raio: float, ):
@@ -1009,15 +1067,6 @@ def main():
     bola = Bola('bola', raio, (0.0, raio, 0.0), ball_texture)
     velocidade_bola: float = 0.25
 
-    # Configuração de formação 4-4-2
-    # Formato: (x, y) -> y representa a profundidade do campo (eixo Z no OpenGL)
-    posicoes_base = [
-        (-50, 0),    # Goleiro
-        (-35, -20), (-35, -7), (-35, 7), (-35, 20), # Defesa
-        (-20, -20), (-20, -7), (-20, 7), (-20, 20), # Meio-campo
-        (-7, -10),  (-7, 10)  # Ataque
-    ]
-
     jogadores_esquerda = []
     jogadores_direita = []
 
@@ -1027,7 +1076,6 @@ def main():
         jogadores_esquerda.append(JogadorSimulado(px, py, "esquerda", texture_player_br))
 
     # Criando Time da Direita (Argentina)
-    # Invertemos o sinal de X para espelhar a posição no outro lado
     for pos in posicoes_base:
         px, py = pos
         jogadores_direita.append(JogadorSimulado(-px, py, "direita", texture_player_ar))
@@ -1039,9 +1087,11 @@ def main():
                 running = False
 
         # No loop principal, pegue a posição da bola:
-        pos_bola = bola.get_position() # Supondo que sua classe Bola tenha esse método
-        bx, by, bz = pos_bola
+        bx, by, bz = bola.get_position()
 
+        # identifica as teclas pressionadas e 
+        # verifica se a bola está dentro do limite do
+        # do campo para poder atualizar sua posicao e rotação
         keys = pygame.key.get_pressed()
         if keys[pygame.K_LEFT]:
             if bx > -(FIELD_LENGTH/2):
@@ -1095,18 +1145,7 @@ def main():
 
         bola.draw()
 
-        # Atualiza e Desenha Jogadores
-        for j in jogadores_esquerda + jogadores_direita:
-            j.update(bx, bz)
-            
-            # Lógica de animação baseada no frame_counter que você já tem
-            if not j.moving:
-                desenhar_personagem_parado(j.x, j.y, 0, j.angulo, j.textures)
-            else:
-                if (frame_counter // 10) % 2 == 0:
-                    desenhar_personagem_passo1(j.x, j.y, 0, j.angulo, j.textures)
-                else:
-                    desenhar_personagem_passo2(j.x, j.y, 0, j.angulo, j.textures)
+        draw_players(jogadores_direita, jogadores_esquerda, bx, bz, frame_counter)
 
         pygame.display.flip()
         clock.tick(60)
