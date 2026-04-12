@@ -57,6 +57,40 @@ RIGHT_TEAM_NAME = "VISITANTE"
 left_score = 0
 right_score = 0
 
+
+
+
+class JogadorSimulado:
+    def __init__(self, x, y, time, textures):
+        self.x = x
+        self.y = y
+        self.pos_inicial = (x, y)
+        self.time = time  # "esquerda" ou "direita"
+        self.textures = textures
+        self.angulo = 0
+        self.moving = False
+
+    def update(self, bola_x, bola_z):
+        # Define se a bola está no seu lado do campo
+        bola_no_meu_lado = (self.time == "esquerda" and bola_x < 0) or \
+                           (self.time == "direita" and bola_x > 0)
+        
+        if bola_no_meu_lado:
+            self.moving = True
+            # Calcula a direção para a bola
+            dx = bola_x - self.x
+            dz = bola_z - self.y # No seu sistema, y do jogo é o z do OpenGL
+            
+            # Move o jogador (velocidade ajustável)
+            distancia = math.sqrt(dx**2 + dz**2)
+            if distancia > 0.5: # Para não "tremer" em cima da bola
+                self.x += (dx / distancia) * 0.15
+                self.y += (dz / distancia) * 0.15
+                # Calcula ângulo para olhar para a bola
+                self.angulo = math.degrees(math.atan2(dx, dz) + 90)
+        else:
+            self.moving = False
+
 # =========================================================
 # TEXTURA
 # =========================================================
@@ -893,25 +927,6 @@ def draw_field_scene(grass_texture, p_x, p_y, p_angle, p_moving, p_frame, textur
     draw_all_corner_flags()
     draw_goal_net("right")
     draw_all_corner_flags()
-    
-    # Lógica de Animação do Jogador
-    if not p_moving:
-        desenhar_personagem_parado(p_x - 10, p_y, 0, p_angle, texture_player_br)
-    else:
-        # Alterna entre passo 1 e 2 a cada 10 frames
-        if (p_frame // 10) % 2 == 0:
-            desenhar_personagem_passo1(p_x - 10, p_y, 0, p_angle, texture_player_br)
-        else:
-            desenhar_personagem_passo2(p_x - 10, p_y, 0, p_angle, texture_player_br)
-
-    if not p_moving:
-        desenhar_personagem_parado(p_x + 10, p_y, 0, p_angle, texture_player_ar)
-    else:
-        # Alterna entre passo 1 e 2 a cada 10 frames
-        if (p_frame // 10) % 2 == 0:
-            desenhar_personagem_passo1(p_x + 10, p_y, 0, p_angle, texture_player_ar)
-        else:
-            desenhar_personagem_passo2(p_x + 10, p_y, 0, p_angle, texture_player_ar)
 
 # =========================================================
 # BOLA
@@ -991,6 +1006,17 @@ def main():
     bola = Bola('bola', raio, (0.0, raio, 0.0), ball_texture)
     velocidade_bola: float = 0.25
 
+    # Inicialização dos jogadores
+    jogadores_esquerda = []
+    jogadores_direita = []
+
+    # Posicionamento inicial (exemplo simples em linha ou formação)
+    for i in range(11):
+        # Espalha jogadores no lado esquerdo (x entre -50 e -5)
+        jogadores_esquerda.append(JogadorSimulado(-10 - (i*3), (i-5)*6, "esquerda", texture_player_br))
+        # Espalha jogadores no lado direito (x entre 5 e 50)
+        jogadores_direita.append(JogadorSimulado(10 + (i*3), (i-5)*6, "direita", texture_player_ar))
+
     while running:
         dx = dz = 0.0
         for event in pygame.event.get():
@@ -1031,7 +1057,6 @@ def main():
         draw_crowd_ui(current_crowd_texture)
         draw_field_scene(grass_texture, 0, 0, 0, 0, 0, texture_player_br, texture_player_ar)
 
-
         draw_scoreboard(
             WINDOW_WIDTH,
             WINDOW_HEIGHT,
@@ -1040,6 +1065,23 @@ def main():
         )
 
         bola.draw()
+
+        # No loop principal, pegue a posição da bola:
+        pos_bola = bola.get_position() # Supondo que sua classe Bola tenha esse método
+        bx, by, bz = pos_bola
+
+        # Atualiza e Desenha Jogadores
+        for j in jogadores_esquerda + jogadores_direita:
+            j.update(bx, bz)
+            
+            # Lógica de animação baseada no frame_counter que você já tem
+            if not j.moving:
+                desenhar_personagem_parado(j.x, j.y, 0, j.angulo, j.textures)
+            else:
+                if (frame_counter // 10) % 2 == 0:
+                    desenhar_personagem_passo1(j.x, j.y, 0, j.angulo, j.textures)
+                else:
+                    desenhar_personagem_passo2(j.x, j.y, 0, j.angulo, j.textures)
 
         pygame.display.flip()
         clock.tick(60)
