@@ -1021,6 +1021,26 @@ def check_goal_and_reset(bola):
     return False
 
 # =========================================================
+# COLISÃO BOLA X JOGADOR
+# =========================================================
+def check_player_collision_and_reset(bola, jogadores):
+    bx, by, bz = bola.get_position()
+
+    # raio aproximado de colisão no chão
+    raio_colisao = 1.8
+
+    for jogador in jogadores:
+        dx = bx - jogador.x
+        dz = bz - jogador.z
+        distancia = math.sqrt(dx**2 + dz**2)
+
+        if distancia <= raio_colisao:
+            bola.set_position(0.0, bola.raio, 0.0)
+            return True
+
+    return False
+
+# =========================================================
 # OPENGL
 # =========================================================
 def setup_opengl(width, height):
@@ -1146,6 +1166,11 @@ def main():
 
         # verifica gol após mover a bola
         if check_goal_and_reset(bola):
+            dx = 0.0
+            dz = 0.0
+
+        # verifica colisão com jogadores e reseta a bola
+        elif check_player_collision_and_reset(bola, jogadores_esquerda + jogadores_direita):
             dx = 0.0
             dz = 0.0
 
