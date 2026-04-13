@@ -995,7 +995,30 @@ def draw_players(jogadores_esquerda, jogadores_direita, bx, bz, frame_counter):
 def create_ball(raio: float, ):
     pass
 
+# =========================================================
+# PONTUAR GOL
+# =========================================================
 
+def check_goal_and_reset(bola):
+    global left_score, right_score
+
+    bx, by, bz = bola.get_position()
+    half_length = FIELD_LENGTH / 2
+    half_goal = GOAL_WIDTH / 2
+
+    # Gol da direita -> ponto para o time da esquerda (CASA)
+    if bx >= half_length and -half_goal <= bz <= half_goal:
+        left_score += 1
+        bola.set_position(0.0, bola.raio, 0.0)
+        return True
+
+    # Gol da esquerda -> ponto para o time da direita (VISITANTE)
+    if bx <= -half_length and -half_goal <= bz <= half_goal:
+        right_score += 1
+        bola.set_position(0.0, bola.raio, 0.0)
+        return True
+
+    return False
 
 # =========================================================
 # OPENGL
@@ -1120,6 +1143,11 @@ def main():
             bola.set_rotacao(1, 1, 0)
 
         bola.translate(dx, 0.0, dz)
+
+        # verifica gol após mover a bola
+        if check_goal_and_reset(bola):
+            dx = 0.0
+            dz = 0.0
 
         frame_counter += 1
 
