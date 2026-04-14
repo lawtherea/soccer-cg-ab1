@@ -791,8 +791,16 @@ def draw_scoreboard(window_width, window_height, font_title, font_score):
     glPopAttrib()
 
 # =========================================================
-# PERSONAGEM
+# CENTRALIZAR TEXTOS
 # =========================================================
+def centralizar_texto(texto: str, fonte: pygame.font.Font) -> tuple[int, int]:
+    surface: pygame.surface.Surface = fonte.render(texto, True, (255, 255, 255))
+    largura = surface.get_width()
+    altura = surface.get_height()
+    x = ((WINDOW_WIDTH // 2) + (largura // 2)) // 2
+    y = (WINDOW_HEIGHT // 2) + (altura // 2)
+    return x, y
+
 def desenhar_personagem_parado(x0, y0, z0, angulo, textures):
     #Cores
     white = (0.95, 0.95, 0.95)
@@ -1085,7 +1093,7 @@ def draw_players(jogadores_esquerda, jogadores_direita, bx, bz, frame_counter):
 def check_goal_and_reset(bola):
     global left_score, right_score
 
-    bx, by, bz = bola.get_position()
+    bx, _, bz = bola.get_position()
     half_length = FIELD_LENGTH / 2
     half_goal = GOAL_WIDTH / 2
 
@@ -1136,6 +1144,9 @@ def set_inclined_camera():
         0.0, 1.0, 0.0
     )
 
+def gerenciarEstado(estado: EstadoJogo) -> None:
+    pass
+
 # =========================================================
 # COLISÃO E CHUTE
 # =========================================================
@@ -1171,6 +1182,8 @@ def verificar_colisao_e_chute(bola, jogadores_esquerda, jogadores_direita, agora
 # LOOP PRINCIPAL
 # =========================================================
 def main():
+    estado: EstadoJogo = EstadoJogo.MENU
+    timer_reinicio = 0
     pygame.mixer.pre_init(frequency=44100, size=-16, channels=2, buffer=4096)
     pygame.mixer.init()
     pygame.init()
@@ -1206,9 +1219,9 @@ def main():
         pygame.quit()
         sys.exit()
 
-    # fontes
+    # carregar fontes
     pygame.font.init()
-    scoreboard_font_title = pygame.font.SysFont("Arial", 22, bold=True)
+    scoreboard_font_title: pygame.font.Font = pygame.font.SysFont("Arial", 22, bold=True)
     scoreboard_font_score = pygame.font.SysFont("Arial", 34, bold=True)
 
     clock = pygame.time.Clock()
@@ -1247,100 +1260,104 @@ def main():
     background_channel.play(crowd_background, loops=-1)
 
     while running:
-        # print(f"Configuracao: {pygame.mixer.get_init()} | Canais: {pygame.mixer.get_num_channels()} | Fundo: {background_channel.get_busy()}")
         dx = dz = 0.0
         for event in pygame.event.get():
             if event.type == QUIT:
                 running = False
 
+            if event.type == pygame.KEYDOWN:
+                if estado == EstadoJogo.MENU and event.key == pygame.K_RETURN:
+                    estado = EstadoJogo.JOGANDO
+
         # No loop principal, pegue a posição da bola:
-        bx, by, bz = bola.get_position()
+        bx, _, bz = bola.get_position()
 
         agora_ms = pygame.time.get_ticks()
 
-        keys = pygame.key.get_pressed()
+        if estado == EstadoJogo.JOGANDO:
+            keys = pygame.key.get_pressed()
 
-        # =========================================================
-        # MOVIMENTO MANUAL OU MOVIMENTO DE CHUTE
-        # =========================================================
-        if agora_ms >= controle_bloqueado_ate:
-            # controle normal
-            if keys[pygame.K_LEFT]:
-                if bx > -(FIELD_LENGTH / 2):
-                    dx = -velocidade_bola
-                elif -(GOAL_WIDTH / 2) < bz < (GOAL_WIDTH / 2):
-                    if bx > -(FIELD_LENGTH / 2) - GOAL_DEPTH:
+            # =========================================================
+            # MOVIMENTO MANUAL OU MOVIMENTO DE CHUTE
+            # =========================================================
+            if agora_ms >= controle_bloqueado_ate:
+                # controle normal
+                if keys[pygame.K_LEFT]:
+                    if bx > -(FIELD_LENGTH / 2):
                         dx = -velocidade_bola
-                bola.set_rotacao(1, 0, 1)
+                    elif -(GOAL_WIDTH / 2) < bz < (GOAL_WIDTH / 2):
+                        if bx > -(FIELD_LENGTH / 2) - GOAL_DEPTH:
+                            dx = -velocidade_bola
+                    bola.set_rotacao(1, 0, 1)
 
-            if keys[pygame.K_RIGHT]:
-                if bx < (FIELD_LENGTH / 2):
-                    dx = velocidade_bola
-                elif -(GOAL_WIDTH / 2) < bz < (GOAL_WIDTH / 2):
-                    if bx < (FIELD_LENGTH / 2) + GOAL_DEPTH:
+                if keys[pygame.K_RIGHT]:
+                    if bx < (FIELD_LENGTH / 2):
                         dx = velocidade_bola
-                bola.set_rotacao(-1, 0, 1)
+                    elif -(GOAL_WIDTH / 2) < bz < (GOAL_WIDTH / 2):
+                        if bx < (FIELD_LENGTH / 2) + GOAL_DEPTH:
+                            dx = velocidade_bola
+                    bola.set_rotacao(-1, 0, 1)
 
-            if keys[pygame.K_UP]:
-                if bz > -(FIELD_WIDTH / 2):
-                    dz = -velocidade_bola
-                bola.set_rotacao(-1, 1, 0)
+                if keys[pygame.K_UP]:
+                    if bz > -(FIELD_WIDTH / 2):
+                        dz = -velocidade_bola
+                    bola.set_rotacao(-1, 1, 0)
 
-            if keys[pygame.K_DOWN]:
-                if bz < (FIELD_WIDTH / 2):
-                    dz = velocidade_bola
-                bola.set_rotacao(1, 1, 0)
-        else:
-            # bola "chutada" por jogador
-            dx = vel_chute_x
-            dz = vel_chute_z
+                if keys[pygame.K_DOWN]:
+                    if bz < (FIELD_WIDTH / 2):
+                        dz = velocidade_bola
+                    bola.set_rotacao(1, 1, 0)
+            else:
+                # bola "chutada" por jogador
+                dx = vel_chute_x
+                dz = vel_chute_z
 
-            vel_chute_x *= ATRITO_CHUTE
-            vel_chute_z *= ATRITO_CHUTE
+                vel_chute_x *= ATRITO_CHUTE
+                vel_chute_z *= ATRITO_CHUTE
 
-            if abs(vel_chute_x) < VELOCIDADE_MIN_CHUTE:
+                if abs(vel_chute_x) < VELOCIDADE_MIN_CHUTE:
+                    vel_chute_x = 0.0
+                if abs(vel_chute_z) < VELOCIDADE_MIN_CHUTE:
+                    vel_chute_z = 0.0
+
+                if dx < 0:
+                    bola.set_rotacao(1, 0, 1)
+                elif dx > 0:
+                    bola.set_rotacao(-1, 0, 1)
+
+            # aplica movimento
+            bola.translate(dx, 0.0, dz)
+
+            # =========================================================
+            # COLISÃO COM JOGADORES
+            # =========================================================
+            if agora_ms >= imunidade_ate:
+                colidiu, novo_vel_x, novo_vel_z = verificar_colisao_e_chute(
+                    bola,
+                    jogadores_esquerda,
+                    jogadores_direita,
+                    agora_ms
+                )
+
+                if colidiu:
+                    vel_chute_x = novo_vel_x
+                    vel_chute_z = novo_vel_z
+                    controle_bloqueado_ate = agora_ms + TEMPO_TRAVADA_MS
+                    imunidade_ate = agora_ms + TEMPO_IMUNIDADE_MS
+
+            # verifica gol após mover a bola
+            if check_goal_and_reset(bola):
+                if goal_channel.get_busy():
+                    goal_channel.stop()
+
+                    goal_channel.play(crowd_goal_sfx)
+
+                dx = 0.0
+                dz = 0.0
                 vel_chute_x = 0.0
-            if abs(vel_chute_z) < VELOCIDADE_MIN_CHUTE:
                 vel_chute_z = 0.0
-
-            if dx < 0:
-                bola.set_rotacao(1, 0, 1)
-            elif dx > 0:
-                bola.set_rotacao(-1, 0, 1)
-
-        # aplica movimento
-        bola.translate(dx, 0.0, dz)
-
-        # =========================================================
-        # COLISÃO COM JOGADORES
-        # =========================================================
-        if agora_ms >= imunidade_ate:
-            colidiu, novo_vel_x, novo_vel_z = verificar_colisao_e_chute(
-                bola,
-                jogadores_esquerda,
-                jogadores_direita,
-                agora_ms
-            )
-
-            if colidiu:
-                vel_chute_x = novo_vel_x
-                vel_chute_z = novo_vel_z
-                controle_bloqueado_ate = agora_ms + TEMPO_TRAVADA_MS
-                imunidade_ate = agora_ms + TEMPO_IMUNIDADE_MS
-
-        # verifica gol após mover a bola
-        if check_goal_and_reset(bola):
-            if goal_channel.get_busy():
-                goal_channel.stop()
-
-            goal_channel.play(crowd_goal_sfx)
-
-            dx = 0.0
-            dz = 0.0
-            vel_chute_x = 0.0
-            vel_chute_z = 0.0
-            controle_bloqueado_ate = 0
-            imunidade_ate = agora_ms + 500
+                controle_bloqueado_ate = 0
+                imunidade_ate = agora_ms + 500
 
         frame_counter += 1
 
@@ -1369,8 +1386,41 @@ def main():
         bola.draw()
         draw_players(jogadores_direita, jogadores_esquerda, bx, bz, frame_counter)
 
+        # desenhar mensagens conforme estado
+        glDisable(GL_DEPTH_TEST)
+        glEnable(GL_BLEND)
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
+
+        msg_restart: str = f"Reiniciando em {timer_reinicio:.1f}s"
+
+        if estado == EstadoJogo.MENU:
+            msg: str = "Pressione ENTER para iniciar"
+            x, y = centralizar_texto(msg, scoreboard_font_score)
+            draw_text_2d(x, y, msg,
+                         scoreboard_font_score,
+                         (255,255,0))
+
+        elif estado in (EstadoJogo.GOL, EstadoJogo.TOQUE):
+            msg: str = "GOOOOLLLL!!!" if estado == EstadoJogo.GOL else "Os jogadores pegaram voce"
+            x, y = centralizar_texto(msg, scoreboard_font_title)
+            draw_text_2d(x, y + 100, msg,
+                         scoreboard_font_score,
+                         (255,255,0))
+
+            x, y = centralizar_texto(msg_restart, scoreboard_font_score)
+            draw_text_2d(x, y, msg_restart,
+                         scoreboard_font_score,
+                         (255,255,0))
+
+            timer_reinicio -= dt
+            if timer_reinicio < 0:
+                estado = EstadoJogo.JOGANDO
+                bola.set_position(0.0, bola.raio, 0.0)
+
+        glEnable(GL_DEPTH_TEST)
+
         pygame.display.flip()
-        clock.tick(60)
+        dt = clock.tick(60) / 1000
 
     pygame.mixer.quit()
     pygame.quit()
