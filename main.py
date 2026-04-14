@@ -347,6 +347,36 @@ def draw_generic_box(x1, y1, z1, x2, y2, z2, color,
 
     glDisable(GL_TEXTURE_2D) # Garante que o estado saia limpo
 
+def draw_shadow_feet(x0, y0, z0, angulo, largura=1.35, comprimento=3.10,
+                       desloc_x=1.85, desloc_z=-0.45):
+    glPushMatrix()
+
+    glTranslatef(x0, 0.04, y0)
+
+    # direção fixa da luz
+    angulo_sombra = -20
+    glRotatef(angulo_sombra, 0.0, 1.0, 0.0)
+
+    glDisable(GL_TEXTURE_2D)
+    glEnable(GL_BLEND)
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
+    glDisable(GL_DEPTH_TEST)
+
+    glColor4f(0.0, 0.0, 0.0, 0.55)
+
+    glBegin(GL_QUADS)
+    glVertex3f(-largura / 2, 0.0, 0.22)
+    glVertex3f( largura / 2, 0.0, 0.22)
+    glVertex3f( largura / 2 + desloc_x, 0.0, -comprimento + desloc_z)
+    glVertex3f(-largura / 2 + desloc_x, 0.0, -comprimento + desloc_z)
+    glEnd()
+
+    glEnable(GL_DEPTH_TEST)
+    glDisable(GL_BLEND)
+    glColor4f(1.0, 1.0, 1.0, 1.0)
+
+    glPopMatrix()
+
 # =========================================================
 # GRAMADO
 # =========================================================
@@ -975,11 +1005,14 @@ def draw_field_scene(grass_texture, p_x, p_y, p_angle, p_moving, p_frame, textur
 # =========================================================
 # Desenha jogadores
 # =========================================================
+def draw_player_shadows(jogadores_esquerda, jogadores_direita):
+    for j in jogadores_esquerda + jogadores_direita:
+        draw_shadow_feet(j.x, j.z, 0, j.angulo)
+
 def draw_players(jogadores_esquerda, jogadores_direita, bx, bz, frame_counter):
     for j in jogadores_esquerda + jogadores_direita:
         j.update(bx, bz)
-            
-        # Lógica de animação baseada no frame_counter que você já tem
+
         if not j.moving:
             desenhar_personagem_parado(j.x, j.z, 0, j.angulo, j.textures)
         else:
@@ -1195,6 +1228,8 @@ def main():
             scoreboard_font_title,
             scoreboard_font_score
         )
+
+        draw_player_shadows(jogadores_direita, jogadores_esquerda)
 
         bola.draw()
 
