@@ -1,5 +1,6 @@
 import math
 import sys
+from enum import Enum
 
 import pygame
 from pygame.locals import DOUBLEBUF, OPENGL, QUIT
@@ -8,6 +9,16 @@ from OpenGL.GL import *
 from OpenGL.GLU import *
 
 from bola import Bola
+
+# =========================================================
+# ESTADOS DO JOGO
+# =========================================================
+class EstadoJogo(Enum):
+    MENU = 1
+    JOGANDO = 2
+    GOL = 3
+    TOQUE = 4
+
 # =========================================================
 # CONFIGURAÇÕES GERAIS
 # =========================================================
@@ -99,21 +110,24 @@ class JogadorSimulado:
             self.angulo = 0
         self.moving = False
 
-    def update(self, bola_x, bola_z):
+    def update(self, bola_x, bola_z, freeze: bool):
         # Define se a bola esta no seu lado do campo
         bola_no_meu_lado = (self.time == "esquerda" and bola_x < 0) or \
                            (self.time == "direita" and bola_x > 0)
-        
+
         # Define se a bola esta na sua area de alcance
         bola_meu_alcance = ((bola_x < self.pos_inicial[0]+AlCALNCE_JOGADOR and bola_x > self.pos_inicial[0]-AlCALNCE_JOGADOR) \
                             and (bola_z < self.pos_inicial[1]+AlCALNCE_JOGADOR and bola_z > self.pos_inicial[1]-AlCALNCE_JOGADOR))
-        
-        if bola_no_meu_lado and bola_meu_alcance:
+
+        if freeze:
+            self.moving = False
+
+        elif bola_no_meu_lado and bola_meu_alcance:
             self.moving = True
             # Calcula a direção para a bola
             dx = bola_x - self.x
             dz = bola_z - self.z 
-            
+
             # Move o jogador (velocidade ajustável)
             distancia = math.sqrt(dx**2 + dz**2)
             if distancia > 0.5: # Para não "tremer" em cima da bola
@@ -121,6 +135,7 @@ class JogadorSimulado:
                 self.z += (dz / distancia) * VELOCIDADE_JOGADOR
                 # Calcula ângulo para olhar para a bola
                 self.angulo = math.degrees(math.atan2(dx, dz) + 90)
+
         elif self.x == self.pos_inicial[0] and self.z == self.pos_inicial[1] :
             self.moving = False
             # Calcula a direção para a bola
@@ -128,13 +143,13 @@ class JogadorSimulado:
             dz = bola_z - self.z
             # Calcula ângulo para olhar para a bola
             self.angulo = math.degrees(math.atan2(dx, dz) + 90)
-            
+
         else:
             self.moving = True
             # Calcula a direção para a posicao de origem
             dx = self.pos_inicial[0] - self.x
             dz = self.pos_inicial[1] - self.z 
-            
+
             # Move o jogador 
             distancia = math.sqrt(dx**2 + dz**2)
             if distancia > 0.5: # Para não "tremer" em cima da bola
@@ -1063,13 +1078,6 @@ def draw_players(jogadores_esquerda, jogadores_direita, bx, bz, frame_counter):
             else:
                 desenhar_personagem_passo2(j.x, j.z, 0, j.angulo, j.textures)
 
-
-# =========================================================
-# BOLA
-# =========================================================
-def create_ball(raio: float, ):
-    pass
-
 # =========================================================
 # PONTUAR GOL
 # =========================================================
@@ -1163,8 +1171,9 @@ def verificar_colisao_e_chute(bola, jogadores_esquerda, jogadores_direita, agora
 # LOOP PRINCIPAL
 # =========================================================
 def main():
-    pygame.init()
+    pygame.mixer.pre_init(frequency=44100, size=-16, channels=2, buffer=4096)
     pygame.mixer.init()
+    pygame.init()
     pygame.display.set_caption("Campo de Futebol 3D")
 
     pygame.display.set_mode((WINDOW_WIDTH, WINDOW_HEIGHT), DOUBLEBUF | OPENGL)
@@ -1185,15 +1194,19 @@ def main():
     texture_player_ar = load_textures_players_ar()
 
     # carregar efeitos sonoros
+    pygame.mixer.set_num_channels(32)
     try:
-        crowd_background_sfx: pygame.mixer.Sound = pygame.mixer.Sound("sounds/torcida_fundo_2.wav")
-        crowd_goal_sfx: pygame.mixer.Sound = pygame.mixer.Sound("sounds/torcida_gol_2.wav")
+        crowd_background = pygame.mixer.Sound("sounds/torcida_fundo_2_otimizado.wav")
+        crowd_goal_sfx: pygame.mixer.Sound = pygame.mixer.Sound("sounds/torcida_gol_2_otimizado.wav")
         whistle: pygame.mixer.Sound = pygame.mixer.Sound("sounds/apito.wav")
+        goal_channel = pygame.mixer.Channel(0)
+        background_channel = pygame.mixer.Channel(1)
     except pygame.error as e:
         print(f"Erro ao carregar os sons: {e}")
         pygame.quit()
         sys.exit()
 
+    # fontes
     pygame.font.init()
     scoreboard_font_title = pygame.font.SysFont("Arial", 22, bold=True)
     scoreboard_font_score = pygame.font.SysFont("Arial", 34, bold=True)
@@ -1203,6 +1216,7 @@ def main():
 
     frame_counter = 0
 
+    # Criando a Bola
     raio: float = 1.0
     bola = Bola('bola', raio, (0.0, raio, 0.0), ball_texture)
     velocidade_bola: float = 0.25
@@ -1216,21 +1230,24 @@ def main():
     jogadores_direita = []
 
     # Criando Time da Esquerda (Brasil)
+    jogadores_esquerda = []
     for pos in posicoes_base:
         px, py = pos
         jogadores_esquerda.append(JogadorSimulado(px, py, "esquerda", texture_player_br))
 
     # Criando Time da Direita (Argentina)
+    jogadores_direita = []
     for pos in posicoes_base:
         px, py = pos
         jogadores_direita.append(JogadorSimulado(-px, py, "direita", texture_player_ar))
 
+    # Sons iniciais
     whistle.play()
-
-    crowd_background_sfx.set_volume(0.5)
-    crowd_background_sfx.play(loops=-1)
+    background_channel.set_volume(0.05)
+    background_channel.play(crowd_background, loops=-1)
 
     while running:
+        # print(f"Configuracao: {pygame.mixer.get_init()} | Canais: {pygame.mixer.get_num_channels()} | Fundo: {background_channel.get_busy()}")
         dx = dz = 0.0
         for event in pygame.event.get():
             if event.type == QUIT:
@@ -1313,6 +1330,11 @@ def main():
 
         # verifica gol após mover a bola
         if check_goal_and_reset(bola):
+            if goal_channel.get_busy():
+                goal_channel.stop()
+
+            goal_channel.play(crowd_goal_sfx)
+
             dx = 0.0
             dz = 0.0
             vel_chute_x = 0.0
@@ -1350,6 +1372,7 @@ def main():
         pygame.display.flip()
         clock.tick(60)
 
+    pygame.mixer.quit()
     pygame.quit()
     sys.exit()
 
