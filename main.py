@@ -377,6 +377,34 @@ def draw_shadow_feet(x0, y0, z0, angulo, largura=1.35, comprimento=3.10,
 
     glPopMatrix()
 
+def draw_ball_shadow(bola, raio_sombra_x=1.05, raio_sombra_z=0.65, offset_x=1.15, offset_z=0.35):
+    bx, by, bz = bola.get_position()
+
+    glPushMatrix()
+    glTranslatef(bx, 0.03, bz)
+    glRotatef(30, 0.0, 1.0, 0.0)
+
+    glDisable(GL_TEXTURE_2D)
+    glEnable(GL_BLEND)
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
+    glDisable(GL_DEPTH_TEST)
+
+    glColor4f(0.0, 0.0, 0.0, 0.40)
+
+    segments = 40
+    glBegin(GL_POLYGON)
+    for i in range(segments):
+        ang = 2 * math.pi * i / segments
+        x = math.cos(ang) * raio_sombra_x + offset_x
+        z = math.sin(ang) * raio_sombra_z + offset_z
+        glVertex3f(x, 0.0, z)
+    glEnd()
+
+    glEnable(GL_DEPTH_TEST)
+    glDisable(GL_BLEND)
+    glColor4f(1.0, 1.0, 1.0, 1.0)
+    glPopMatrix()
+
 # =========================================================
 # GRAMADO
 # =========================================================
@@ -1230,9 +1258,8 @@ def main():
         )
 
         draw_player_shadows(jogadores_direita, jogadores_esquerda)
-
+        draw_ball_shadow(bola)
         bola.draw()
-
         draw_players(jogadores_direita, jogadores_esquerda, bx, bz, frame_counter)
 
         pygame.display.flip()
