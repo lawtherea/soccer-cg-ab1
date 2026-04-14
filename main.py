@@ -75,6 +75,17 @@ posicoes_base = [
 AlCALNCE_JOGADOR = 15
 VELOCIDADE_JOGADOR = 0.15
 
+# =========================================================
+# COLISÃO BOLA x JOGADOR
+# =========================================================
+RAIO_COLISAO_JOGADOR = 1.8
+TEMPO_TRAVADA_MS = 220
+TEMPO_IMUNIDADE_MS = 450
+FORCA_CHUTE_X = 0.78
+FORCA_CHUTE_Z = 0.16
+ATRITO_CHUTE = 0.94
+VELOCIDADE_MIN_CHUTE = 0.015
+
 class JogadorSimulado:
     def __init__(self, x, z, time, textures):
         self.x = x
@@ -1021,26 +1032,6 @@ def check_goal_and_reset(bola):
     return False
 
 # =========================================================
-# COLISÃO BOLA X JOGADOR
-# =========================================================
-def check_player_collision_and_reset(bola, jogadores):
-    bx, by, bz = bola.get_position()
-
-    # raio aproximado de colisão no chão
-    raio_colisao = 1.8
-
-    for jogador in jogadores:
-        dx = bx - jogador.x
-        dz = bz - jogador.z
-        distancia = math.sqrt(dx**2 + dz**2)
-
-        if distancia <= raio_colisao:
-            bola.set_position(0.0, bola.raio, 0.0)
-            return True
-
-    return False
-
-# =========================================================
 # OPENGL
 # =========================================================
 def setup_opengl(width, height):
@@ -1072,6 +1063,37 @@ def set_inclined_camera():
         0.0, 0.0, 0.0,
         0.0, 1.0, 0.0
     )
+
+# =========================================================
+# COLISÃO E CHUTE
+# =========================================================
+def verificar_colisao_e_chute(bola, jogadores_esquerda, jogadores_direita, agora_ms):
+    bx, by, bz = bola.get_position()
+
+    todos_jogadores = jogadores_esquerda + jogadores_direita
+
+    for j in todos_jogadores:
+        dx = bx - j.x
+        dz = bz - j.z
+        distancia = math.sqrt(dx * dx + dz * dz)
+
+        if distancia <= RAIO_COLISAO_JOGADOR:
+            # Time da esquerda chuta para a direita
+            if j.time == "esquerda":
+                vel_x = FORCA_CHUTE_X
+            # Time da direita chuta para a esquerda
+            else:
+                vel_x = -FORCA_CHUTE_X
+
+            # pequeno desvio no eixo Z para não ficar reto demais
+            if abs(dz) > 0.15:
+                vel_z = FORCA_CHUTE_Z if dz > 0 else -FORCA_CHUTE_Z
+            else:
+                vel_z = 0.0
+
+            return True, vel_x, vel_z
+
+    return False, 0.0, 0.0
 
 # =========================================================
 # LOOP PRINCIPAL
@@ -1110,6 +1132,11 @@ def main():
     bola = Bola('bola', raio, (0.0, raio, 0.0), ball_texture)
     velocidade_bola: float = 0.25
 
+    controle_bloqueado_ate = 0
+    imunidade_ate = 0
+    vel_chute_x = 0.0
+    vel_chute_z = 0.0
+
     jogadores_esquerda = []
     jogadores_direita = []
 
@@ -1132,47 +1159,86 @@ def main():
         # No loop principal, pegue a posição da bola:
         bx, by, bz = bola.get_position()
 
-        # identifica as teclas pressionadas e 
-        # verifica se a bola está dentro do limite do
-        # do campo para poder atualizar sua posicao e rotação
+        agora_ms = pygame.time.get_ticks()
+
         keys = pygame.key.get_pressed()
-        if keys[pygame.K_LEFT]:
-            if bx > -(FIELD_LENGTH/2):
-                dx = -velocidade_bola
-            elif bz > -(GOAL_WIDTH/2) and bz < (GOAL_WIDTH/2):
-                if bx > -(FIELD_LENGTH/2) -(GOAL_DEPTH):
+
+        # =========================================================
+        # MOVIMENTO MANUAL OU MOVIMENTO DE CHUTE
+        # =========================================================
+        if agora_ms >= controle_bloqueado_ate:
+            # controle normal
+            if keys[pygame.K_LEFT]:
+                if bx > -(FIELD_LENGTH / 2):
                     dx = -velocidade_bola
-            bola.set_rotacao(1, 0, 1)
+                elif -(GOAL_WIDTH / 2) < bz < (GOAL_WIDTH / 2):
+                    if bx > -(FIELD_LENGTH / 2) - GOAL_DEPTH:
+                        dx = -velocidade_bola
+                bola.set_rotacao(1, 0, 1)
 
-        if keys[pygame.K_RIGHT]:
-            if bx < (FIELD_LENGTH/2):
-                dx = +velocidade_bola
-            elif bz > -(GOAL_WIDTH/2) and bz < (GOAL_WIDTH/2):
-                if bx < (FIELD_LENGTH/2) + (GOAL_DEPTH):
+            if keys[pygame.K_RIGHT]:
+                if bx < (FIELD_LENGTH / 2):
                     dx = velocidade_bola
-            bola.set_rotacao(-1, 0, 1)
+                elif -(GOAL_WIDTH / 2) < bz < (GOAL_WIDTH / 2):
+                    if bx < (FIELD_LENGTH / 2) + GOAL_DEPTH:
+                        dx = velocidade_bola
+                bola.set_rotacao(-1, 0, 1)
 
-        if keys[pygame.K_UP]:
-            if bz > -(FIELD_WIDTH/2):
-                dz = -velocidade_bola
-            bola.set_rotacao(-1, 1, 0)
+            if keys[pygame.K_UP]:
+                if bz > -(FIELD_WIDTH / 2):
+                    dz = -velocidade_bola
+                bola.set_rotacao(-1, 1, 0)
 
-        if keys[pygame.K_DOWN]:
-            if bz < (FIELD_WIDTH/2):
-                dz = velocidade_bola
-            bola.set_rotacao(1, 1, 0)
+            if keys[pygame.K_DOWN]:
+                if bz < (FIELD_WIDTH / 2):
+                    dz = velocidade_bola
+                bola.set_rotacao(1, 1, 0)
+        else:
+            # bola "chutada" por jogador
+            dx = vel_chute_x
+            dz = vel_chute_z
 
+            vel_chute_x *= ATRITO_CHUTE
+            vel_chute_z *= ATRITO_CHUTE
+
+            if abs(vel_chute_x) < VELOCIDADE_MIN_CHUTE:
+                vel_chute_x = 0.0
+            if abs(vel_chute_z) < VELOCIDADE_MIN_CHUTE:
+                vel_chute_z = 0.0
+
+            if dx < 0:
+                bola.set_rotacao(1, 0, 1)
+            elif dx > 0:
+                bola.set_rotacao(-1, 0, 1)
+
+        # aplica movimento
         bola.translate(dx, 0.0, dz)
+
+        # =========================================================
+        # COLISÃO COM JOGADORES
+        # =========================================================
+        if agora_ms >= imunidade_ate:
+            colidiu, novo_vel_x, novo_vel_z = verificar_colisao_e_chute(
+                bola,
+                jogadores_esquerda,
+                jogadores_direita,
+                agora_ms
+            )
+
+            if colidiu:
+                vel_chute_x = novo_vel_x
+                vel_chute_z = novo_vel_z
+                controle_bloqueado_ate = agora_ms + TEMPO_TRAVADA_MS
+                imunidade_ate = agora_ms + TEMPO_IMUNIDADE_MS
 
         # verifica gol após mover a bola
         if check_goal_and_reset(bola):
             dx = 0.0
             dz = 0.0
-
-        # verifica colisão com jogadores e reseta a bola
-        elif check_player_collision_and_reset(bola, jogadores_esquerda + jogadores_direita):
-            dx = 0.0
-            dz = 0.0
+            vel_chute_x = 0.0
+            vel_chute_z = 0.0
+            controle_bloqueado_ate = 0
+            imunidade_ate = agora_ms + 500
 
         frame_counter += 1
 
