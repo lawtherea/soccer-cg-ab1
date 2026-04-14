@@ -377,12 +377,12 @@ def draw_shadow_feet(x0, y0, z0, angulo, largura=1.35, comprimento=3.10,
 
     glPopMatrix()
 
-def draw_ball_shadow(bola, raio_sombra_x=1.05, raio_sombra_z=0.65, offset_x=1.15, offset_z=0.35):
+def draw_ball_shadow(bola, raio_sombra_x=1.55, raio_sombra_z=0.65, offset_x=1.15, offset_z=0.35):
     bx, by, bz = bola.get_position()
 
     glPushMatrix()
     glTranslatef(bx, 0.03, bz)
-    glRotatef(30, 0.0, 1.0, 0.0)
+    glRotatef(50, 0.0, 1.0, 0.0)
 
     glDisable(GL_TEXTURE_2D)
     glEnable(GL_BLEND)
