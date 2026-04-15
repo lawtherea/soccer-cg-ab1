@@ -73,7 +73,7 @@ posicoes_base = [
 # =========================================================
 
 AlCALNCE_JOGADOR = 15
-VELOCIDADE_JOGADOR = 0.15
+VELOCIDADE_JOGADOR = 0.20
 
 class JogadorSimulado:
     def __init__(self, x, z, time, textures):
@@ -957,6 +957,28 @@ def load_textures_players_ar():
 
     return textures
 
+def load_textures_players_mas():
+    try:
+        textures = {
+            "peito": load_texture("texturas_mas\\peito_mas.png"),
+            "costas": load_texture("texturas_mas\\costas_mas.png"),
+            "lateral_camisa": load_texture("texturas_mas\\camisa_lateral_mas.png"),
+            "perna": load_texture("texturas_mas\\perna_mas.png"),
+            "short_topo": load_texture("texturas_mas\\short_topo_mas.png"),
+            "braco": load_texture("texturas_mas\\braco_mas.png"),
+            "manga_topo": load_texture("texturas_mas\\manga_topo_mas.png"),
+            "mao": load_texture("texturas_mas\\mao_mas.png"),
+            "rosto": load_texture("texturas_mas\\rosto_mas.png"),
+            "cabeca_lateral_direita": load_texture("texturas_mas\\cabeca_lateral_fundo_topo.png"),
+            "cabeca_lateral_esquerdo": load_texture("texturas_mas\\cabeca_lateral_fundo_topo.png"),
+            "cabeca_topo_fundo": load_texture("texturas_mas\\cabeca_lateral_fundo_topo.png")
+        }
+    except Exception as e:
+        print(f"Erro ao carregar textura do tronco: {e}")
+        trunk_texture = None # Fallback caso a imagem não exista
+
+    return textures
+
 
 # =========================================================
 # CENA
@@ -1096,6 +1118,7 @@ def main():
 
     texture_player_br = load_textures_players_br()
     texture_player_ar = load_textures_players_ar()
+    texture_player_mas = load_textures_players_mas()
 
     pygame.font.init()
     scoreboard_font_title = pygame.font.SysFont("Arial", 22, bold=True)
