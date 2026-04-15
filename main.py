@@ -1,5 +1,6 @@
 import math
 import sys
+from enum import Enum
 
 import pygame
 from pygame.locals import DOUBLEBUF, OPENGL, QUIT
@@ -8,6 +9,15 @@ from OpenGL.GL import *
 from OpenGL.GLU import *
 
 from bola import Bola
+
+# =========================================================
+# ESTADOS DO JOGO
+# =========================================================
+class EstadoJogo(Enum):
+    MENU = 1
+    JOGANDO = 2
+    GOL = 3
+
 # =========================================================
 # CONFIGURAÇÕES GERAIS
 # =========================================================
@@ -119,18 +129,19 @@ class JogadorSimulado:
         # Define se a bola esta no seu lado do campo
         bola_no_meu_lado = (self.time == "esquerda" and bola_x < 0) or \
                            (self.time == "direita" and bola_x > 0)
+
         
         
         # Define se a bola esta na sua area de alcance
         bola_meu_alcance = ((bola_x < self.pos_inicial[0]+AlCALNCE_JOGADOR and bola_x > self.pos_inicial[0]-AlCALNCE_JOGADOR) \
                             and (bola_z < self.pos_inicial[1]+AlCALNCE_JOGADOR and bola_z > self.pos_inicial[1]-AlCALNCE_JOGADOR))
-        
+
         if bola_no_meu_lado and bola_meu_alcance:
             self.moving = True
             # Calcula a direção para a bola
             dx = bola_x - self.x
             dz = bola_z - self.z 
-            
+
             # Move o jogador (velocidade ajustável)
             distancia = math.sqrt(dx**2 + dz**2)
             if distancia > 0.5: # Para não "tremer" em cima da bola
@@ -138,6 +149,7 @@ class JogadorSimulado:
                 self.z += (dz / distancia) * VELOCIDADE_JOGADOR
                 # Calcula ângulo para olhar para a bola
                 self.angulo = math.degrees(math.atan2(dx, dz) + 90)
+
         elif self.x == self.pos_inicial[0] and self.z == self.pos_inicial[1] :
             self.moving = False
             # Calcula a direção para a bola
@@ -145,13 +157,13 @@ class JogadorSimulado:
             dz = bola_z - self.z
             # Calcula ângulo para olhar para a bola
             self.angulo = math.degrees(math.atan2(dx, dz) + 90)
-            
+
         else:
             self.moving = True
             # Calcula a direção para a posicao de origem
             dx = self.pos_inicial[0] - self.x
             dz = self.pos_inicial[1] - self.z 
-            
+
             # Move o jogador 
             distancia = math.sqrt(dx**2 + dz**2)
             if distancia > 0.5: # Para não "tremer" em cima da bola
@@ -722,11 +734,13 @@ def draw_crowd_ui(texture_id):
 # =========================================================
 # PLACAR 2D
 # =========================================================
-def draw_text_2d(x, y, text, font, color=(255, 255, 255), bg=None):
-    text_surface = font.render(text, True, color, bg)
+def draw_text_2d(x, y, text: str, font: pygame.font.Font, color=(255, 255, 255), bg=None) -> None:
+    """ Desenha o texto passado em 2D na tela """
+
+    text_surface: pygame.Surface = font.render(text, True, color, bg)
     text_data = pygame.image.tostring(text_surface, "RGBA", True)
-    width = text_surface.get_width()
-    height = text_surface.get_height()
+    width: int = text_surface.get_width()
+    height: int = text_surface.get_height()
 
     glWindowPos2d(x, y)
     glDrawPixels(width, height, GL_RGBA, GL_UNSIGNED_BYTE, text_data)
@@ -793,7 +807,18 @@ def draw_scoreboard(window_width, window_height, font_title, font_score):
     glPopAttrib()
 
 # =========================================================
-# PERSONAGEM
+# CENTRALIZAR TEXTOS
+# =========================================================
+def centralizar_texto(texto: str, fonte: pygame.font.Font) -> tuple[int, int]:
+    surface: pygame.surface.Surface = fonte.render(texto, True, (255, 255, 255))
+    largura = surface.get_width()
+    altura = surface.get_height()
+    x = (WINDOW_WIDTH - largura) // 2
+    y = (WINDOW_HEIGHT - altura) // 2
+    return x, y
+
+# =========================================================
+# DESENHAR PERSONAGEM
 # =========================================================
 def desenhar_personagem_parado(x0, y0, z0, angulo, textures):
     #Cores
@@ -1005,18 +1030,18 @@ def desenhar_personagem_passo2(x0, y0, z0, angulo, textures):
 def load_textures_players_br():
     try:
         textures = {
-            "peito": load_texture("texturas_br\\peito3.png"),
-            "costas": load_texture("texturas_br\\costas2.png"),
-            "lateral_camisa": load_texture("texturas_br\\lateral_camisa_br.png"),
-            "perna": load_texture("texturas_br\\pernas_br.png"),
-            "short_topo": load_texture("texturas_br\\short_topo_br.png"),
-            "braco": load_texture("texturas_br\\braco_br.png"),
-            "manga_topo": load_texture("texturas_br\\manga_topo_br.png"),
-            "mao": load_texture("texturas_br\\mao_br.png"),
-            "rosto": load_texture("texturas_br\\rosto_br.png"),
-            "cabeca_lateral_direita": load_texture("texturas_br\\cabeca_lateral_direita_br.png"),
-            "cabeca_lateral_esquerdo": load_texture("texturas_br\\cabeca_lateral_esquerda_br.png"),
-            "cabeca_topo_fundo": load_texture("texturas_br\\cabeca_topo_fundo_br.png")
+            "peito": load_texture("texturas_br/peito3.png"),
+            "costas": load_texture("texturas_br/costas2.png"),
+            "lateral_camisa": load_texture("texturas_br/lateral_camisa_br.png"),
+            "perna": load_texture("texturas_br/pernas_br.png"),
+            "short_topo": load_texture("texturas_br/short_topo_br.png"),
+            "braco": load_texture("texturas_br/braco_br.png"),
+            "manga_topo": load_texture("texturas_br/manga_topo_br.png"),
+            "mao": load_texture("texturas_br/mao_br.png"),
+            "rosto": load_texture("texturas_br/rosto_br.png"),
+            "cabeca_lateral_direita": load_texture("texturas_br/cabeca_lateral_direita_br.png"),
+            "cabeca_lateral_esquerdo": load_texture("texturas_br/cabeca_lateral_esquerda_br.png"),
+            "cabeca_topo_fundo": load_texture("texturas_br/cabeca_topo_fundo_br.png")
         }
     except Exception as e:
         print(f"Erro ao carregar textura do tronco: {e}")
@@ -1027,18 +1052,18 @@ def load_textures_players_br():
 def load_textures_players_ar():
     try:
         textures = {
-            "peito": load_texture("texturas_ar\\peito_ar.png"),
-            "costas": load_texture("texturas_ar\\costas_ar.png"),
-            "lateral_camisa": load_texture("texturas_ar\\lateral_camisa_ar.png"),
-            "perna": load_texture("texturas_ar\\perna_ar.png"),
-            "short_topo": load_texture("texturas_ar\\short_manga_topo_ar.png"),
-            "braco": load_texture("texturas_ar\\braco_ar.png"),
-            "manga_topo": load_texture("texturas_ar\\short_manga_topo_ar.png"),
-            "mao": load_texture("texturas_ar\\mao_ar.png"),
-            "rosto": load_texture("texturas_ar\\rosto_ar.png"),
-            "cabeca_lateral_direita": load_texture("texturas_ar\\cabeca_lateral_direita_ar.png"),
-            "cabeca_lateral_esquerdo": load_texture("texturas_ar\\cabeca_lateral_esquerda_ar.png"),
-            "cabeca_topo_fundo": load_texture("texturas_ar\\cabeca_topo_fundo_ar.png")
+            "peito": load_texture("texturas_ar/peito_ar.png"),
+            "costas": load_texture("texturas_ar/costas_ar.png"),
+            "lateral_camisa": load_texture("texturas_ar/lateral_camisa_ar.png"),
+            "perna": load_texture("texturas_ar/perna_ar.png"),
+            "short_topo": load_texture("texturas_ar/short_manga_topo_ar.png"),
+            "braco": load_texture("texturas_ar/braco_ar.png"),
+            "manga_topo": load_texture("texturas_ar/short_manga_topo_ar.png"),
+            "mao": load_texture("texturas_ar/mao_ar.png"),
+            "rosto": load_texture("texturas_ar/rosto_ar.png"),
+            "cabeca_lateral_direita": load_texture("texturas_ar/cabeca_lateral_direita_ar.png"),
+            "cabeca_lateral_esquerdo": load_texture("texturas_ar/cabeca_lateral_esquerda_ar.png"),
+            "cabeca_topo_fundo": load_texture("texturas_ar/cabeca_topo_fundo_ar.png")
         }
     except Exception as e:
         print(f"Erro ao carregar textura do tronco: {e}")
@@ -1132,10 +1157,18 @@ def draw_mascot( mascote, frame_counter):
 
 
 # =========================================================
-# BOLA
+# CENA
 # =========================================================
-def create_ball(raio: float, ):
-    pass
+def draw_field_scene(grass_texture, p_x, p_y, p_angle, p_moving, p_frame, texture_player_br, texture_player_ar):
+    draw_grass(grass_texture)
+    draw_field_lines()
+    draw_goal_frame("left")
+    draw_goal_frame("right")
+    draw_goal_net("left")
+    draw_goal_net("right")
+    draw_all_corner_flags()
+    draw_goal_net("right")
+    draw_all_corner_flags()
 
 # =========================================================
 # PONTUAR GOL
@@ -1144,7 +1177,7 @@ def create_ball(raio: float, ):
 def check_goal_and_reset(bola):
     global left_score, right_score
 
-    bx, by, bz = bola.get_position()
+    bx, _, bz = bola.get_position()
     half_length = FIELD_LENGTH / 2
     half_goal = GOAL_WIDTH / 2
 
@@ -1230,12 +1263,17 @@ def verificar_colisao_e_chute(bola, jogadores_esquerda, jogadores_direita, agora
 # LOOP PRINCIPAL
 # =========================================================
 def main():
+    estado: EstadoJogo = EstadoJogo.MENU
+    timer_reinicio: float = 0.0
+    pygame.mixer.pre_init(frequency=44100, size=-16, channels=2, buffer=4096)
+    pygame.mixer.init()
     pygame.init()
     pygame.display.set_caption("Campo de Futebol 3D")
 
     pygame.display.set_mode((WINDOW_WIDTH, WINDOW_HEIGHT), DOUBLEBUF | OPENGL)
     setup_opengl(WINDOW_WIDTH, WINDOW_HEIGHT)
 
+    # carregar texturas
     try:
         grass_texture = load_texture("grass.jpg")
         crowd_texture_1 = load_texture_alpha("torcida_mov1.png")
@@ -1245,21 +1283,46 @@ def main():
         print(f"Erro ao carregar as imagens: {e}")
         pygame.quit()
         sys.exit()
- 
 
     texture_player_br = load_textures_players_br()
     texture_player_ar = load_textures_players_ar()
     texture_player_mas = load_textures_players_mas()
 
+    # carregar efeitos sonoros
+    pygame.mixer.set_num_channels(32)
+    try:
+        crowd_background = pygame.mixer.Sound("sounds/torcida_fundo_2_otimizado.wav")
+        crowd_goal_sfx: pygame.mixer.Sound = pygame.mixer.Sound("sounds/torcida_gol_2_otimizado.wav")
+        whistle: pygame.mixer.Sound = pygame.mixer.Sound("sounds/apito.wav")
+        goal_channel = pygame.mixer.Channel(0)
+        background_channel = pygame.mixer.Channel(1)
+    except pygame.error as e:
+        print(f"Erro ao carregar os sons: {e}")
+        pygame.quit()
+        sys.exit()
+
+    # carregar fontes
     pygame.font.init()
-    scoreboard_font_title = pygame.font.SysFont("Arial", 22, bold=True)
-    scoreboard_font_score = pygame.font.SysFont("Arial", 34, bold=True)
+    scoreboard_font_title: pygame.font.Font = pygame.font.SysFont(
+            "Arial", 22, bold=True)
+    scoreboard_font_score: pygame.font.Font = pygame.font.SysFont(
+            "Arial", 34, bold=True)
+    title_font_over: pygame.font.Font = pygame.font.Font(
+            "fonts/Platinum Sign Over.ttf",
+            size=50)
+    title_font_under: pygame.font.Font = pygame.font.Font(
+            "fonts/Platinum Sign Under.ttf",
+            size=50)
+    subtitle: pygame.font.Font = pygame.font.Font(
+            "fonts/Daydream DEMO.otf",
+            size=22)
 
     clock = pygame.time.Clock()
     running = True
 
     frame_counter = 0
 
+    # Criando a Bola
     raio: float = 1.0
     bola = Bola('bola', raio, (0.0, raio, 0.0), ball_texture)
     velocidade_bola: float = 0.25
@@ -1273,16 +1336,23 @@ def main():
     jogadores_direita = []
 
     # Criando Time da Esquerda (Brasil)
+    jogadores_esquerda = []
     for pos in posicoes_base:
         px, pz = pos
         jogadores_esquerda.append(JogadorSimulado(px, pz, "esquerda", texture_player_br))
 
     # Criando Time da Direita (Argentina)
+    jogadores_direita = []
     for pos in posicoes_base:
         px, pz = pos
         jogadores_direita.append(JogadorSimulado(-px, pz, "direita", texture_player_ar))
 
     mascote = JogadorSimulado(FIELD_LENGTH/2, -(FIELD_WIDTH/2 + 2), None, texture_player_mas)
+
+    # Sons iniciais
+    whistle.play()
+    background_channel.set_volume(0.05)
+    background_channel.play(crowd_background, loops=-1)
 
     while running:
         dx = dz = 0.0
@@ -1290,89 +1360,101 @@ def main():
             if event.type == QUIT:
                 running = False
 
+            if event.type == pygame.KEYDOWN:
+                if estado == EstadoJogo.MENU and event.key == pygame.K_RETURN:
+                    estado = EstadoJogo.JOGANDO
+
         # No loop principal, pegue a posição da bola:
-        bx, by, bz = bola.get_position()
+        bx, _, bz = bola.get_position()
 
         agora_ms = pygame.time.get_ticks()
 
-        keys = pygame.key.get_pressed()
+        if estado == EstadoJogo.JOGANDO:
+            keys = pygame.key.get_pressed()
 
-        # =========================================================
-        # MOVIMENTO MANUAL OU MOVIMENTO DE CHUTE
-        # =========================================================
-        if agora_ms >= controle_bloqueado_ate:
-            # controle normal
-            if keys[pygame.K_LEFT]:
-                if bx > -(FIELD_LENGTH / 2):
-                    dx = -velocidade_bola
-                elif -(GOAL_WIDTH / 2) < bz < (GOAL_WIDTH / 2):
-                    if bx > -(FIELD_LENGTH / 2) - GOAL_DEPTH:
+            # =========================================================
+            # MOVIMENTO MANUAL OU MOVIMENTO DE CHUTE
+            # =========================================================
+            if agora_ms >= controle_bloqueado_ate:
+                # controle normal
+                if keys[pygame.K_LEFT]:
+                    if bx > -(FIELD_LENGTH / 2):
                         dx = -velocidade_bola
-                bola.set_rotacao(1, 0, 1)
+                    elif -(GOAL_WIDTH / 2) < bz < (GOAL_WIDTH / 2):
+                        if bx > -(FIELD_LENGTH / 2) - GOAL_DEPTH:
+                            dx = -velocidade_bola
+                    bola.set_rotacao(1, 0, 1)
 
-            if keys[pygame.K_RIGHT]:
-                if bx < (FIELD_LENGTH / 2):
-                    dx = velocidade_bola
-                elif -(GOAL_WIDTH / 2) < bz < (GOAL_WIDTH / 2):
-                    if bx < (FIELD_LENGTH / 2) + GOAL_DEPTH:
+                if keys[pygame.K_RIGHT]:
+                    if bx < (FIELD_LENGTH / 2):
                         dx = velocidade_bola
-                bola.set_rotacao(-1, 0, 1)
+                    elif -(GOAL_WIDTH / 2) < bz < (GOAL_WIDTH / 2):
+                        if bx < (FIELD_LENGTH / 2) + GOAL_DEPTH:
+                            dx = velocidade_bola
+                    bola.set_rotacao(-1, 0, 1)
 
-            if keys[pygame.K_UP]:
-                if bz > -(FIELD_WIDTH / 2):
-                    dz = -velocidade_bola
-                bola.set_rotacao(-1, 1, 0)
+                if keys[pygame.K_UP]:
+                    if bz > -(FIELD_WIDTH / 2):
+                        dz = -velocidade_bola
+                    bola.set_rotacao(-1, 1, 0)
 
-            if keys[pygame.K_DOWN]:
-                if bz < (FIELD_WIDTH / 2):
-                    dz = velocidade_bola
-                bola.set_rotacao(1, 1, 0)
-        else:
-            # bola "chutada" por jogador
-            dx = vel_chute_x
-            dz = vel_chute_z
+                if keys[pygame.K_DOWN]:
+                    if bz < (FIELD_WIDTH / 2):
+                        dz = velocidade_bola
+                    bola.set_rotacao(1, 1, 0)
+            else:
+                # bola "chutada" por jogador
+                dx = vel_chute_x
+                dz = vel_chute_z
 
-            vel_chute_x *= ATRITO_CHUTE
-            vel_chute_z *= ATRITO_CHUTE
+                vel_chute_x *= ATRITO_CHUTE
+                vel_chute_z *= ATRITO_CHUTE
 
-            if abs(vel_chute_x) < VELOCIDADE_MIN_CHUTE:
+                if abs(vel_chute_x) < VELOCIDADE_MIN_CHUTE:
+                    vel_chute_x = 0.0
+                if abs(vel_chute_z) < VELOCIDADE_MIN_CHUTE:
+                    vel_chute_z = 0.0
+
+                if dx < 0:
+                    bola.set_rotacao(1, 0, 1)
+                elif dx > 0:
+                    bola.set_rotacao(-1, 0, 1)
+
+            # aplica movimento
+            bola.translate(dx, 0.0, dz)
+
+            # =========================================================
+            # COLISÃO COM JOGADORES
+            # =========================================================
+            if agora_ms >= imunidade_ate:
+                colidiu, novo_vel_x, novo_vel_z = verificar_colisao_e_chute(
+                    bola,
+                    jogadores_esquerda,
+                    jogadores_direita,
+                    agora_ms
+                )
+
+                if colidiu:
+                    vel_chute_x = novo_vel_x
+                    vel_chute_z = novo_vel_z
+                    controle_bloqueado_ate = agora_ms + TEMPO_TRAVADA_MS
+                    imunidade_ate = agora_ms + TEMPO_IMUNIDADE_MS
+
+            # verifica gol após mover a bola
+            if check_goal_and_reset(bola):
+                if goal_channel.get_busy():
+                    goal_channel.stop()
+
+                goal_channel.play(crowd_goal_sfx)
+                estado = EstadoJogo.GOL
+                timer_reinicio = 3.0
+
+                dx = 0.0
+                dz = 0.0
                 vel_chute_x = 0.0
-            if abs(vel_chute_z) < VELOCIDADE_MIN_CHUTE:
                 vel_chute_z = 0.0
-
-            if dx < 0:
-                bola.set_rotacao(1, 0, 1)
-            elif dx > 0:
-                bola.set_rotacao(-1, 0, 1)
-
-        # aplica movimento
-        bola.translate(dx, 0.0, dz)
-
-        # =========================================================
-        # COLISÃO COM JOGADORES
-        # =========================================================
-        if agora_ms >= imunidade_ate:
-            colidiu, novo_vel_x, novo_vel_z = verificar_colisao_e_chute(
-                bola,
-                jogadores_esquerda,
-                jogadores_direita,
-                agora_ms
-            )
-
-            if colidiu:
-                vel_chute_x = novo_vel_x
-                vel_chute_z = novo_vel_z
-                controle_bloqueado_ate = agora_ms + TEMPO_TRAVADA_MS
-                imunidade_ate = agora_ms + TEMPO_IMUNIDADE_MS
-
-        # verifica gol após mover a bola
-        if check_goal_and_reset(bola):
-            dx = 0.0
-            dz = 0.0
-            vel_chute_x = 0.0
-            vel_chute_z = 0.0
-            controle_bloqueado_ate = 0
-            imunidade_ate = agora_ms + 500
+                controle_bloqueado_ate = 0
+                imunidade_ate = agora_ms + 500
 
         frame_counter += 1
 
@@ -1402,9 +1484,72 @@ def main():
         draw_players(jogadores_direita, jogadores_esquerda, bx, bz, frame_counter)
         draw_mascot(mascote, frame_counter)
 
-        pygame.display.flip()
-        clock.tick(60)
+        # desenhar mensagens conforme estado
+        glDisable(GL_DEPTH_TEST)
+        glEnable(GL_BLEND)
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
 
+        msg_restart: str = f"Reiniciando em {timer_reinicio:.1f}s"
+
+        if estado == EstadoJogo.MENU:
+            msg: str = "BORA JOGAR?"
+
+            # sombra
+            offset: int = 2
+            x, y = centralizar_texto(msg, title_font_under)
+            draw_text_2d(x, y + 100, msg,
+                         title_font_under,
+                         (44, 105, 158))
+
+            # titulo
+            x, y = centralizar_texto(msg, title_font_over)
+            draw_text_2d(x - 10, y + 100 + 2, msg,
+                         title_font_over,
+                         (241, 249, 52))
+
+            # subtitulo
+            sub: str = "Pressione \"ENTER\" para iniciar"
+            x, y = centralizar_texto(sub, subtitle)
+            draw_text_2d(x, y, sub,
+                         subtitle,
+                         (199, 218, 190),
+                         (68, 128, 34))
+
+        elif estado == EstadoJogo.GOL:
+            # sombra
+            msg: str = "GOOOOLLLL!!!"
+            x, y = centralizar_texto(msg, title_font_under)
+            draw_text_2d(x, y + 100, msg,
+                         title_font_under,
+                         (31, 87, 84))
+
+            # titulo
+            x, y = centralizar_texto(msg, title_font_over)
+            draw_text_2d(x - 10, y + 100 + 2, msg,
+                         title_font_over,
+                         (241, 249, 52))
+
+            # subtitulo
+            x, y = centralizar_texto(msg_restart, subtitle)
+            draw_text_2d(x, y, msg_restart,
+                         subtitle,
+                         (199, 218, 190),
+                         (68, 128, 34))
+
+            # decrementar timer
+            timer_reinicio -= dt
+
+            # reiniciar jogo
+            if timer_reinicio < 0:
+                estado = EstadoJogo.JOGANDO
+                bola.set_position(0.0, bola.raio, 0.0)
+
+        glEnable(GL_DEPTH_TEST)
+
+        pygame.display.flip()
+        dt = clock.tick(60) / 1000
+
+    pygame.mixer.quit()
     pygame.quit()
     sys.exit()
 
