@@ -1,5 +1,7 @@
 # Computer Graphics Project — OpenGL Soccer Field
 
+![Gameplay GIF](./soccer_game.gif)
+
 This repository contains a project developed for the first assessment of the Computer Graphics course at the Federal University of Alagoas (UFAL), taught by **Prof. Dr. Marcelo Costa Oliveira**.
 
 ## Team
