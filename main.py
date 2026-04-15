@@ -88,6 +88,7 @@ class JogadorSimulado:
             self.angulo = 0
         self.moving = False
 
+
     def update(self, bola_x, bola_z):
         # Define se a bola esta no seu lado do campo
         bola_no_meu_lado = (self.time == "esquerda" and bola_x < 0) or \
