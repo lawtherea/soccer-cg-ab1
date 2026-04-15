@@ -775,6 +775,9 @@ def draw_scoreboard(window_width, window_height, font_title, font_score):
 
     glPopAttrib()
 
+# =========================================================
+# PERSONAGEM
+# =========================================================
 def desenhar_personagem_parado(x0, y0, z0, angulo, textures):
     #Cores
     white = (0.95, 0.95, 0.95)
