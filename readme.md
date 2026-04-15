@@ -1,34 +1,34 @@
-# Projeto de Computação Gráfica — Campo de Futebol em OpenGL
+# Computer Graphics Project — OpenGL Soccer Field
 
-Este repositório contém o projeto desenvolvido para a **AB1 da disciplina de Computação Gráfica**, da **Universidade Federal de Alagoas (UFAL)**, ministrada pelo **Prof. Dr. Marcelo Costa Oliveira**.
+This repository contains a project developed for the first assessment of the Computer Graphics course at the Federal University of Alagoas (UFAL), taught by **Prof. Dr. Marcelo Costa Oliveira**.
 
-## Equipe
+## Team
 
 - **Leila Biggi**
 - **Wyvian Valença**
 - **José Wender**
 
-## Objetivo do projeto
+## Project Overview
 
-Desenvolver uma aplicação gráfica em OpenGL que represente um ambiente de futebol com elementos visuais e interativos, contemplando modelagem, movimentação, placar, personagens, torcida, sons e mecânicas adicionais criadas pela equipe.
+The goal of this project is to develop an OpenGL application that simulates a soccer environment with both visual and interactive elements. The project includes field modeling, ball movement, a scoreboard system, players, crowd animation, sound effects, and extra gameplay mechanics created by the team.
 
-## Requisitos da atividade
+## Assignment Requirements
 
-O projeto foi proposto com os seguintes requisitos:
+The project was developed based on the following requirements:
 
-- Desenhar um campo de futebol, incluindo retas, circunferências e demais marcações;
-- Criar uma bola, que deverá ser movimentada usando o teclado;
-- Criar um placar, que deverá ser atualizado sempre que a bola passar da linha do gol, com reposicionamento da bola no meio do campo;
-- Criar os jogadores e a torcida, sendo permitido o uso de ferramentas como Blender para esse requisito;
-- Criar a torcida;
-- Incluir som;
-- Criar uma mecânica de movimentação dos jogadores atrás da bola, usando criatividade;
-- Ser criativo e incluir um item adicional;
-- Buscar realismo e qualidade visual.
+- Draw a soccer field, including lines, circles, and all main field markings;
+- Create a ball that can be controlled with the keyboard;
+- Create a scoreboard that updates whenever the ball crosses the goal line, resetting the ball to the center of the field after each goal;
+- Create the players and the crowd, with the use of tools such as Blender allowed for this part;
+- Add a crowd to the scene;
+- Include sound effects;
+- Create a mechanic in which players move toward or behind the ball in a creative way;
+- Add an extra creative element to the project;
+- Aim for realism and visual quality.
 
-## Tecnologias utilizadas
+## Technologies Used
 
-Este projeto utiliza:
+This project was built with:
 
 - **Python**
 - **OpenGL**
