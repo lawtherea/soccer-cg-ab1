@@ -74,6 +74,7 @@ posicoes_base = [
 
 AlCALNCE_JOGADOR = 15
 VELOCIDADE_JOGADOR = 0.20
+ALTURA_PULO_MASCOTE = 2.0
 
 class JogadorSimulado:
     def __init__(self, x, z, time, textures):
@@ -88,11 +89,26 @@ class JogadorSimulado:
             self.angulo = 0
         self.moving = False
 
+    def get_pos_inicial(self):
+        return self.pos_inicial
+    
+    def set_pos_inicial(self, pos_inicial):
+        self.pos_inicial = pos_inicial
+
+    def get_x (self):
+        return self.x
+    
+    def get_z (self):
+        return self.z
+    
+    def get_moving (self):
+        return self.moving
 
     def update(self, bola_x, bola_z):
         # Define se a bola esta no seu lado do campo
         bola_no_meu_lado = (self.time == "esquerda" and bola_x < 0) or \
                            (self.time == "direita" and bola_x > 0)
+        
         
         # Define se a bola esta na sua area de alcance
         bola_meu_alcance = ((bola_x < self.pos_inicial[0]+AlCALNCE_JOGADOR and bola_x > self.pos_inicial[0]-AlCALNCE_JOGADOR) \
@@ -1011,6 +1027,37 @@ def draw_players(jogadores_esquerda, jogadores_direita, bx, bz, frame_counter):
             else:
                 desenhar_personagem_passo2(j.x, j.z, 0, j.angulo, j.textures)
 
+# =========================================================
+# Desenha Mascote
+# =========================================================
+def draw_mascot( mascote, frame_counter):
+    pix, piz = mascote.get_pos_inicial()
+    if mascote.x == pix:
+        z = mascote.get_z()
+        if (not mascote.get_moving()) and pix < 0:
+            mascote.set_pos_inicial((FIELD_LENGTH/2, z))
+        else:
+            mascote.set_pos_inicial((-(FIELD_LENGTH/2), z))
+
+    mascote.update(0, 0)
+
+    #print(f"{mascote.get_pos_inicial()}")
+    #print(f"FON {mascote.get_x()} , {mascote.get_z()}")
+
+    if frame_counter % 100 < 50: 
+        y = ((frame_counter % 50) * 0.02) * ALTURA_PULO_MASCOTE    
+    else:
+        y = ALTURA_PULO_MASCOTE - ((frame_counter % 50) * 0.02) * ALTURA_PULO_MASCOTE
+
+    # Animação baseada no frame_counter
+    if not mascote.moving:
+        desenhar_personagem_parado(mascote.x, mascote.z, 0, mascote.angulo, mascote.textures)
+    else:
+        if (frame_counter // 10) % 2 == 0:
+            desenhar_personagem_passo1(mascote.x, mascote.z, 0, mascote.angulo, mascote.textures)
+        else:
+            desenhar_personagem_passo2(mascote.x, mascote.z, 0, mascote.angulo, mascote.textures)
+
 
 # =========================================================
 # BOLA
@@ -1139,13 +1186,15 @@ def main():
 
     # Criando Time da Esquerda (Brasil)
     for pos in posicoes_base:
-        px, py = pos
-        jogadores_esquerda.append(JogadorSimulado(px, py, "esquerda", texture_player_br))
+        px, pz = pos
+        jogadores_esquerda.append(JogadorSimulado(px, pz, "esquerda", texture_player_br))
 
     # Criando Time da Direita (Argentina)
     for pos in posicoes_base:
-        px, py = pos
-        jogadores_direita.append(JogadorSimulado(-px, py, "direita", texture_player_ar))
+        px, pz = pos
+        jogadores_direita.append(JogadorSimulado(-px, pz, "direita", texture_player_ar))
+
+    mascote = JogadorSimulado(FIELD_LENGTH/2, -(FIELD_WIDTH/2 + 2), None, texture_player_mas)
 
     while running:
         dx = dz = 0.0
@@ -1223,6 +1272,7 @@ def main():
         bola.draw()
 
         draw_players(jogadores_direita, jogadores_esquerda, bx, bz, frame_counter)
+        draw_mascot(mascote, frame_counter)
 
         pygame.display.flip()
         clock.tick(60)
