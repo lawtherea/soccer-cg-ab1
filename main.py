@@ -1116,22 +1116,19 @@ def draw_mascot( mascote, frame_counter):
 
     mascote.update(0, 0)
 
-    #print(f"{mascote.get_pos_inicial()}")
-    #print(f"FON {mascote.get_x()} , {mascote.get_z()}")
-
-    if frame_counter % 100 < 50: 
-        y = ((frame_counter % 50) * 0.02) * ALTURA_PULO_MASCOTE    
+    if frame_counter % 40 < 20: 
+        y = ((frame_counter % 20) * 0.05) * ALTURA_PULO_MASCOTE    
     else:
-        y = ALTURA_PULO_MASCOTE - ((frame_counter % 50) * 0.02) * ALTURA_PULO_MASCOTE
+        y = ALTURA_PULO_MASCOTE - ((frame_counter % 20) * 0.05) * ALTURA_PULO_MASCOTE
 
     # Animação baseada no frame_counter
     if not mascote.moving:
-        desenhar_personagem_parado(mascote.x, mascote.z, 0, mascote.angulo, mascote.textures)
+        desenhar_personagem_parado(mascote.x, mascote.z, y, mascote.angulo, mascote.textures)
     else:
         if (frame_counter // 10) % 2 == 0:
-            desenhar_personagem_passo1(mascote.x, mascote.z, 0, mascote.angulo, mascote.textures)
+            desenhar_personagem_passo1(mascote.x, mascote.z, y, mascote.angulo, mascote.textures)
         else:
-            desenhar_personagem_passo2(mascote.x, mascote.z, 0, mascote.angulo, mascote.textures)
+            desenhar_personagem_passo2(mascote.x, mascote.z, y, mascote.angulo, mascote.textures)
 
 
 # =========================================================
