@@ -1278,20 +1278,6 @@ def draw_character_frame2(x0, y0, z0, angulo, textures):
     glPopMatrix()
 
 # =========================================================
-# CENA
-# =========================================================
-def draw_field_scene(grass_texture, p_x, p_y, p_angle, p_moving, p_frame, texture_player_br, texture_player_ar):
-    draw_grass(grass_texture)
-    draw_field_lines()
-    draw_goal_frame("left")
-    draw_goal_frame("right")
-    draw_goal_net("left")
-    draw_goal_net("right")
-    draw_all_corner_flags()
-    draw_goal_net("right")
-    draw_all_corner_flags()
-
-# =========================================================
 # Desenha jogadores
 # =========================================================
 def draw_player_shadows(jogadores_esquerda, jogadores_direita):
@@ -1359,8 +1345,6 @@ def draw_field_scene(grass_texture, p_x, p_y, p_angle, p_moving, p_frame, textur
     draw_goal_frame("left")
     draw_goal_frame("right")
     draw_goal_net("left")
-    draw_goal_net("right")
-    draw_all_corner_flags()
     draw_goal_net("right")
     draw_all_corner_flags()
 
@@ -1526,9 +1510,6 @@ def main():
     vel_chute_x = 0.0
     vel_chute_z = 0.0
 
-    jogadores_esquerda = []
-    jogadores_direita = []
-
     # Criando Time da Esquerda (Brasil)
     jogadores_esquerda = []
     for pos in posicoes_base:
@@ -1689,7 +1670,6 @@ def main():
             msg: str = "BORA JOGAR?"
 
             # sombra
-            offset: int = 2
             x, y = centralizar_texto(msg, title_font_under)
             draw_text_2d(x, y + 100, msg,
                          title_font_under,
