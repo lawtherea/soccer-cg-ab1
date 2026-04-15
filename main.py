@@ -73,7 +73,8 @@ posicoes_base = [
 # =========================================================
 
 AlCALNCE_JOGADOR = 15
-VELOCIDADE_JOGADOR = 0.15
+VELOCIDADE_JOGADOR = 0.20
+ALTURA_PULO_MASCOTE = 2.0
 
 # =========================================================
 # COLISÃO BOLA x JOGADOR
@@ -99,10 +100,26 @@ class JogadorSimulado:
             self.angulo = 0
         self.moving = False
 
+    def get_pos_inicial(self):
+        return self.pos_inicial
+    
+    def set_pos_inicial(self, pos_inicial):
+        self.pos_inicial = pos_inicial
+
+    def get_x (self):
+        return self.x
+    
+    def get_z (self):
+        return self.z
+    
+    def get_moving (self):
+        return self.moving
+
     def update(self, bola_x, bola_z):
         # Define se a bola esta no seu lado do campo
         bola_no_meu_lado = (self.time == "esquerda" and bola_x < 0) or \
                            (self.time == "direita" and bola_x > 0)
+        
         
         # Define se a bola esta na sua area de alcance
         bola_meu_alcance = ((bola_x < self.pos_inicial[0]+AlCALNCE_JOGADOR and bola_x > self.pos_inicial[0]-AlCALNCE_JOGADOR) \
@@ -1029,6 +1046,28 @@ def load_textures_players_ar():
 
     return textures
 
+def load_textures_players_mas():
+    try:
+        textures = {
+            "peito": load_texture("texturas_mas\\peito_mas.png"),
+            "costas": load_texture("texturas_mas\\costas_mas.png"),
+            "lateral_camisa": load_texture("texturas_mas\\camisa_lateral_mas.png"),
+            "perna": load_texture("texturas_mas\\perna_mas.png"),
+            "short_topo": load_texture("texturas_mas\\short_topo_mas.png"),
+            "braco": load_texture("texturas_mas\\braco_mas.png"),
+            "manga_topo": load_texture("texturas_mas\\manga_topo_mas.png"),
+            "mao": load_texture("texturas_mas\\mao_mas.png"),
+            "rosto": load_texture("texturas_mas\\rosto_mas.png"),
+            "cabeca_lateral_direita": load_texture("texturas_mas\\cabeca_lateral_fundo_topo.png"),
+            "cabeca_lateral_esquerdo": load_texture("texturas_mas\\cabeca_lateral_fundo_topo.png"),
+            "cabeca_topo_fundo": load_texture("texturas_mas\\cabeca_lateral_fundo_topo.png")
+        }
+    except Exception as e:
+        print(f"Erro ao carregar textura do tronco: {e}")
+        trunk_texture = None # Fallback caso a imagem não exista
+
+    return textures
+
 
 # =========================================================
 # CENA
@@ -1062,6 +1101,34 @@ def draw_players(jogadores_esquerda, jogadores_direita, bx, bz, frame_counter):
                 desenhar_personagem_passo1(j.x, j.z, 0, j.angulo, j.textures)
             else:
                 desenhar_personagem_passo2(j.x, j.z, 0, j.angulo, j.textures)
+
+# =========================================================
+# Desenha Mascote
+# =========================================================
+def draw_mascot( mascote, frame_counter):
+    pix, piz = mascote.get_pos_inicial()
+    if mascote.x == pix:
+        z = mascote.get_z()
+        if (not mascote.get_moving()) and pix < 0:
+            mascote.set_pos_inicial((FIELD_LENGTH/2, z))
+        else:
+            mascote.set_pos_inicial((-(FIELD_LENGTH/2), z))
+
+    mascote.update(0, 0)
+
+    if frame_counter % 40 < 20: 
+        y = ((frame_counter % 20) * 0.05) * ALTURA_PULO_MASCOTE    
+    else:
+        y = ALTURA_PULO_MASCOTE - ((frame_counter % 20) * 0.05) * ALTURA_PULO_MASCOTE
+
+    # Animação baseada no frame_counter
+    if not mascote.moving:
+        desenhar_personagem_parado(mascote.x, mascote.z, y, mascote.angulo, mascote.textures)
+    else:
+        if (frame_counter // 10) % 2 == 0:
+            desenhar_personagem_passo1(mascote.x, mascote.z, y, mascote.angulo, mascote.textures)
+        else:
+            desenhar_personagem_passo2(mascote.x, mascote.z, y, mascote.angulo, mascote.textures)
 
 
 # =========================================================
@@ -1182,6 +1249,7 @@ def main():
 
     texture_player_br = load_textures_players_br()
     texture_player_ar = load_textures_players_ar()
+    texture_player_mas = load_textures_players_mas()
 
     pygame.font.init()
     scoreboard_font_title = pygame.font.SysFont("Arial", 22, bold=True)
@@ -1206,13 +1274,15 @@ def main():
 
     # Criando Time da Esquerda (Brasil)
     for pos in posicoes_base:
-        px, py = pos
-        jogadores_esquerda.append(JogadorSimulado(px, py, "esquerda", texture_player_br))
+        px, pz = pos
+        jogadores_esquerda.append(JogadorSimulado(px, pz, "esquerda", texture_player_br))
 
     # Criando Time da Direita (Argentina)
     for pos in posicoes_base:
-        px, py = pos
-        jogadores_direita.append(JogadorSimulado(-px, py, "direita", texture_player_ar))
+        px, pz = pos
+        jogadores_direita.append(JogadorSimulado(-px, pz, "direita", texture_player_ar))
+
+    mascote = JogadorSimulado(FIELD_LENGTH/2, -(FIELD_WIDTH/2 + 2), None, texture_player_mas)
 
     while running:
         dx = dz = 0.0
@@ -1330,6 +1400,7 @@ def main():
         draw_ball_shadow(bola)
         bola.draw()
         draw_players(jogadores_direita, jogadores_esquerda, bx, bz, frame_counter)
+        draw_mascot(mascote, frame_counter)
 
         pygame.display.flip()
         clock.tick(60)
