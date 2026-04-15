@@ -17,7 +17,6 @@ class EstadoJogo(Enum):
     MENU = 1
     JOGANDO = 2
     GOL = 3
-    TOQUE = 4
 
 # =========================================================
 # CONFIGURAÇÕES GERAIS
@@ -110,7 +109,7 @@ class JogadorSimulado:
             self.angulo = 0
         self.moving = False
 
-    def update(self, bola_x, bola_z, freeze: bool):
+    def update(self, bola_x, bola_z):
         # Define se a bola esta no seu lado do campo
         bola_no_meu_lado = (self.time == "esquerda" and bola_x < 0) or \
                            (self.time == "direita" and bola_x > 0)
@@ -119,10 +118,7 @@ class JogadorSimulado:
         bola_meu_alcance = ((bola_x < self.pos_inicial[0]+AlCALNCE_JOGADOR and bola_x > self.pos_inicial[0]-AlCALNCE_JOGADOR) \
                             and (bola_z < self.pos_inicial[1]+AlCALNCE_JOGADOR and bola_z > self.pos_inicial[1]-AlCALNCE_JOGADOR))
 
-        if freeze:
-            self.moving = False
-
-        elif bola_no_meu_lado and bola_meu_alcance:
+        if bola_no_meu_lado and bola_meu_alcance:
             self.moving = True
             # Calcula a direção para a bola
             dx = bola_x - self.x
@@ -720,11 +716,13 @@ def draw_crowd_ui(texture_id):
 # =========================================================
 # PLACAR 2D
 # =========================================================
-def draw_text_2d(x, y, text, font, color=(255, 255, 255), bg=None):
-    text_surface = font.render(text, True, color, bg)
+def draw_text_2d(x, y, text: str, font: pygame.font.Font, color=(255, 255, 255), bg=None) -> None:
+    """ Desenha o texto passado em 2D na tela """
+
+    text_surface: pygame.Surface = font.render(text, True, color, bg)
     text_data = pygame.image.tostring(text_surface, "RGBA", True)
-    width = text_surface.get_width()
-    height = text_surface.get_height()
+    width: int = text_surface.get_width()
+    height: int = text_surface.get_height()
 
     glWindowPos2d(x, y)
     glDrawPixels(width, height, GL_RGBA, GL_UNSIGNED_BYTE, text_data)
@@ -797,10 +795,13 @@ def centralizar_texto(texto: str, fonte: pygame.font.Font) -> tuple[int, int]:
     surface: pygame.surface.Surface = fonte.render(texto, True, (255, 255, 255))
     largura = surface.get_width()
     altura = surface.get_height()
-    x = ((WINDOW_WIDTH // 2) + (largura // 2)) // 2
-    y = (WINDOW_HEIGHT // 2) + (altura // 2)
+    x = (WINDOW_WIDTH - largura) // 2
+    y = (WINDOW_HEIGHT - altura) // 2
     return x, y
 
+# =========================================================
+# DESENHAR PERSONAGEM
+# =========================================================
 def desenhar_personagem_parado(x0, y0, z0, angulo, textures):
     #Cores
     white = (0.95, 0.95, 0.95)
@@ -1052,24 +1053,6 @@ def load_textures_players_ar():
 
     return textures
 
-
-# =========================================================
-# CENA
-# =========================================================
-def draw_field_scene(grass_texture, p_x, p_y, p_angle, p_moving, p_frame, texture_player_br, texture_player_ar):
-    draw_grass(grass_texture)
-    draw_field_lines()
-    draw_goal_frame("left")
-    draw_goal_frame("right")
-    draw_goal_net("left")
-    draw_goal_net("right")
-    draw_all_corner_flags()
-    draw_goal_net("right")
-    draw_all_corner_flags()
-
-# =========================================================
-# Desenha jogadores
-# =========================================================
 def draw_player_shadows(jogadores_esquerda, jogadores_direita):
     for j in jogadores_esquerda + jogadores_direita:
         draw_shadow_feet(j.x, j.z, 0, j.angulo)
@@ -1085,6 +1068,20 @@ def draw_players(jogadores_esquerda, jogadores_direita, bx, bz, frame_counter):
                 desenhar_personagem_passo1(j.x, j.z, 0, j.angulo, j.textures)
             else:
                 desenhar_personagem_passo2(j.x, j.z, 0, j.angulo, j.textures)
+
+# =========================================================
+# CENA
+# =========================================================
+def draw_field_scene(grass_texture, p_x, p_y, p_angle, p_moving, p_frame, texture_player_br, texture_player_ar):
+    draw_grass(grass_texture)
+    draw_field_lines()
+    draw_goal_frame("left")
+    draw_goal_frame("right")
+    draw_goal_net("left")
+    draw_goal_net("right")
+    draw_all_corner_flags()
+    draw_goal_net("right")
+    draw_all_corner_flags()
 
 # =========================================================
 # PONTUAR GOL
@@ -1144,9 +1141,6 @@ def set_inclined_camera():
         0.0, 1.0, 0.0
     )
 
-def gerenciarEstado(estado: EstadoJogo) -> None:
-    pass
-
 # =========================================================
 # COLISÃO E CHUTE
 # =========================================================
@@ -1183,7 +1177,7 @@ def verificar_colisao_e_chute(bola, jogadores_esquerda, jogadores_direita, agora
 # =========================================================
 def main():
     estado: EstadoJogo = EstadoJogo.MENU
-    timer_reinicio = 0
+    timer_reinicio: float = 0.0
     pygame.mixer.pre_init(frequency=44100, size=-16, channels=2, buffer=4096)
     pygame.mixer.init()
     pygame.init()
@@ -1221,8 +1215,19 @@ def main():
 
     # carregar fontes
     pygame.font.init()
-    scoreboard_font_title: pygame.font.Font = pygame.font.SysFont("Arial", 22, bold=True)
-    scoreboard_font_score = pygame.font.SysFont("Arial", 34, bold=True)
+    scoreboard_font_title: pygame.font.Font = pygame.font.SysFont(
+            "Arial", 22, bold=True)
+    scoreboard_font_score: pygame.font.Font = pygame.font.SysFont(
+            "Arial", 34, bold=True)
+    title_font_over: pygame.font.Font = pygame.font.Font(
+            "fonts/Platinum Sign Over.ttf",
+            size=50)
+    title_font_under: pygame.font.Font = pygame.font.Font(
+            "fonts/Platinum Sign Under.ttf",
+            size=50)
+    subtitle: pygame.font.Font = pygame.font.Font(
+            "fonts/Daydream DEMO.otf",
+            size=22)
 
     clock = pygame.time.Clock()
     running = True
@@ -1350,7 +1355,9 @@ def main():
                 if goal_channel.get_busy():
                     goal_channel.stop()
 
-                    goal_channel.play(crowd_goal_sfx)
+                goal_channel.play(crowd_goal_sfx)
+                estado = EstadoJogo.GOL
+                timer_reinicio = 3.0
 
                 dx = 0.0
                 dz = 0.0
@@ -1394,25 +1401,54 @@ def main():
         msg_restart: str = f"Reiniciando em {timer_reinicio:.1f}s"
 
         if estado == EstadoJogo.MENU:
-            msg: str = "Pressione ENTER para iniciar"
-            x, y = centralizar_texto(msg, scoreboard_font_score)
-            draw_text_2d(x, y, msg,
-                         scoreboard_font_score,
-                         (255,255,0))
+            msg: str = "BORA JOGAR?"
 
-        elif estado in (EstadoJogo.GOL, EstadoJogo.TOQUE):
-            msg: str = "GOOOOLLLL!!!" if estado == EstadoJogo.GOL else "Os jogadores pegaram voce"
-            x, y = centralizar_texto(msg, scoreboard_font_title)
+            # sombra
+            offset: int = 2
+            x, y = centralizar_texto(msg, title_font_under)
             draw_text_2d(x, y + 100, msg,
-                         scoreboard_font_score,
-                         (255,255,0))
+                         title_font_under,
+                         (44, 105, 158))
 
-            x, y = centralizar_texto(msg_restart, scoreboard_font_score)
+            # titulo
+            x, y = centralizar_texto(msg, title_font_over)
+            draw_text_2d(x - 10, y + 100 + 2, msg,
+                         title_font_over,
+                         (241, 249, 52))
+
+            # subtitulo
+            sub: str = "Pressione \"ENTER\" para iniciar"
+            x, y = centralizar_texto(sub, subtitle)
+            draw_text_2d(x, y, sub,
+                         subtitle,
+                         (199, 218, 190),
+                         (68, 128, 34))
+
+        elif estado == EstadoJogo.GOL:
+            # sombra
+            msg: str = "GOOOOLLLL!!!"
+            x, y = centralizar_texto(msg, title_font_under)
+            draw_text_2d(x, y + 100, msg,
+                         title_font_under,
+                         (31, 87, 84))
+
+            # titulo
+            x, y = centralizar_texto(msg, title_font_over)
+            draw_text_2d(x - 10, y + 100 + 2, msg,
+                         title_font_over,
+                         (241, 249, 52))
+
+            # subtitulo
+            x, y = centralizar_texto(msg_restart, subtitle)
             draw_text_2d(x, y, msg_restart,
-                         scoreboard_font_score,
-                         (255,255,0))
+                         subtitle,
+                         (199, 218, 190),
+                         (68, 128, 34))
 
+            # decrementar timer
             timer_reinicio -= dt
+
+            # reiniciar jogo
             if timer_reinicio < 0:
                 estado = EstadoJogo.JOGANDO
                 bola.set_position(0.0, bola.raio, 0.0)
