@@ -25,7 +25,7 @@ The project was developed based on the following requirements:
 - Add a crowd to the scene;
 - Include sound effects;
 - Create a mechanic in which players move toward or behind the ball in a creative way;
-- Add an extra creative element to the project;
+- Add an extra creative element to the project (in our case, the mascot Canarinho);
 - Aim for realism and visual quality.
 
 ## Technologies Used
